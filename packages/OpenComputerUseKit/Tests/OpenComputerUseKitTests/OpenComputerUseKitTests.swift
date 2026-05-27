@@ -507,10 +507,9 @@ final class OpenComputerUseKitTests: XCTestCase {
     func testToolDescriptionsMatchOfficialComputerUseSurface() {
         let tools = Dictionary(uniqueKeysWithValues: ToolDefinitions.all.map { ($0.name, $0) })
 
-        XCTAssertEqual(
-            tools["get_app_state"]?.description,
-            "Start an app use session if needed, then get the state of the app's key window and return a screenshot and accessibility tree. This must be called once per assistant turn before interacting with the app. This tool is part of plugin `Computer Use`."
-        )
+        XCTAssertTrue(tools["get_app_state"]?.description.hasPrefix("Workflow: list_apps") == true)
+        XCTAssertTrue(tools["get_app_state"]?.description.contains("get_app_state") == true)
+        XCTAssertFalse(tools["get_app_state"]?.description.contains("plugin `Computer Use`") == true)
         XCTAssertTrue(tools["press_key"]?.description.contains("xdotool") == true)
         XCTAssertEqual(
             tools["click"]?.annotations["destructiveHint"] as? Bool,
@@ -1099,6 +1098,19 @@ final class OpenComputerUseKitTests: XCTestCase {
         XCTAssertTrue(AppSafetyPolicy.isBlocked(bundleIdentifier: "com.1password.1password"))
         XCTAssertTrue(AppSafetyPolicy.isBlocked(bundleIdentifier: "com.bitwarden.desktop"))
         XCTAssertTrue(AppSafetyPolicy.isBlocked(bundleIdentifier: "me.proton.pass.electron"))
+        XCTAssertTrue(AppSafetyPolicy.isBlocked(bundleIdentifier: "com.apple.Passwords"))
+    }
+
+    func testComputerUsePolicyBlocksPasswordManagersByDefault() {
+        XCTAssertTrue(ComputerUsePolicy.isBlocked(bundleIdentifier: "com.1password.1password"))
+        XCTAssertTrue(ComputerUsePolicy.isBlocked(query: "com.bitwarden.desktop"))
+    }
+
+    func testMCPTextTruncationAddsSuffix() {
+        let long = String(repeating: "a", count: 100)
+        let truncated = MCPTextTruncation.truncate(long, environment: ["OPEN_COMPUTER_USE_MAX_TEXT_CHARS": "20"])
+        XCTAssertTrue(truncated.hasSuffix("[truncated]"))
+        XCTAssertLessThanOrEqual(truncated.count, 20 + "\n\n[truncated]".count)
     }
 
     func testVisualCursorEnvFlagDefaultsToEnabled() {
@@ -1301,6 +1313,42 @@ final class OpenComputerUseKitTests: XCTestCase {
         let selected = preferredWindowCaptureCandidate([other, main], titleHint: "Nomi")
 
         XCTAssertEqual(selected?.windowID, main.windowID)
+    }
+
+    func testWindowCapturePrefersFrontmostLayerZeroWhenWindowsOverlap() {
+        let background = WindowCaptureCandidate(
+            windowID: 1,
+            layer: 0,
+            bounds: CGRect(x: 100, y: 100, width: 900, height: 700),
+            title: "Background",
+            area: 630_000,
+            frontToBackIndex: 2
+        )
+        let glassOverlay = WindowCaptureCandidate(
+            windowID: 2,
+            layer: 0,
+            bounds: CGRect(x: 140, y: 140, width: 820, height: 620),
+            title: "Sheet",
+            area: 508_400,
+            frontToBackIndex: 1
+        )
+        let frontmost = WindowCaptureCandidate(
+            windowID: 3,
+            layer: 0,
+            bounds: CGRect(x: 180, y: 180, width: 760, height: 560),
+            title: "Front",
+            area: 425_600,
+            frontToBackIndex: 0
+        )
+
+        let selected = preferredWindowCaptureCandidate([background, glassOverlay, frontmost], titleHint: nil)
+
+        XCTAssertEqual(selected?.windowID, frontmost.windowID)
+    }
+
+    func testAppQueryAliasMapsSystemSettingsToBundleIdentifier() {
+        XCTAssertEqual(AppDiscovery.normalizeAppQueryForTesting("System Settings"), "com.apple.systempreferences")
+        XCTAssertEqual(AppDiscovery.normalizeAppQueryForTesting("Réglages système"), "com.apple.systempreferences")
     }
 
     func testListTraversalPrefersVisibleChildrenAndReadsContents() {

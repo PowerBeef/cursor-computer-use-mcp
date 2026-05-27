@@ -13,6 +13,7 @@ function usage() {
   node ./scripts/install-config-helper.mjs claude-mcp <config-path> <project-root> <server-name> <command-name>
   node ./scripts/install-config-helper.mjs codex-mcp <config-path> <server-name> <command-name>
   node ./scripts/install-config-helper.mjs gemini-mcp <config-path> <server-name> <command-name>
+  node ./scripts/install-config-helper.mjs cursor-mcp <config-path> <server-name> <command-name>
   node ./scripts/install-config-helper.mjs opencode-mcp <primary-config-path> <secondary-config-path> <server-name> <command-name>
   node ./scripts/install-config-helper.mjs codex-plugin-version <plugin-manifest-path>
   node ./scripts/install-config-helper.mjs codex-plugin-config <config-path> <repo-root> <marketplace-name> <plugin-name>
@@ -251,6 +252,48 @@ function installClaudeMcp(configPath, projectRoot, serverName, commandName) {
     process.stdout.write(`Claude MCP server "${serverName}" was already installed for ${projectRoot}; removed legacy alias "${legacyServerName}" from ${configPath}.\n`);
   } else {
     process.stdout.write(`Installed Claude MCP server "${serverName}" for ${projectRoot} into ${configPath}.\n`);
+  }
+}
+
+function installCursorMcp(configPath, serverName, commandName) {
+  const desiredEntry = {
+    command: commandName,
+    args: ["mcp"],
+  };
+  const legacyServerNames = ["open-computer-use", "open-codex-computer-use"];
+  const data = readJSONObjectConfig(configPath, `Cursor config ${configPath}`);
+  const mcpServers = ensureObjectField(
+    data,
+    "mcpServers",
+    `Existing Cursor config has non-object "mcpServers"; refusing to modify it.`,
+  );
+
+  const target = mcpServers[serverName];
+  const targetMatches = JSON.stringify(target) === JSON.stringify(desiredEntry);
+  const legacyMatches = legacyServerNames.some(
+    (legacyServerName) => JSON.stringify(mcpServers[legacyServerName]) === JSON.stringify(desiredEntry),
+  );
+
+  if (targetMatches && !legacyMatches) {
+    process.stdout.write(`Cursor MCP server "${serverName}" is already installed in ${configPath}.\n`);
+    return;
+  }
+
+  mcpServers[serverName] = desiredEntry;
+  for (const legacyServerName of legacyServerNames) {
+    if (JSON.stringify(mcpServers[legacyServerName]) === JSON.stringify(desiredEntry)) {
+      delete mcpServers[legacyServerName];
+    }
+  }
+
+  writeJSONConfig(configPath, data);
+
+  if (targetMatches && legacyMatches) {
+    process.stdout.write(
+      `Cursor MCP server "${serverName}" was already installed; removed legacy aliases from ${configPath}.\n`,
+    );
+  } else {
+    process.stdout.write(`Installed Cursor MCP server "${serverName}" into ${configPath}.\n`);
   }
 }
 
@@ -498,6 +541,13 @@ function main(argv) {
         process.exit(1);
       }
       installGeminiMcp(...args);
+      return;
+    case "cursor-mcp":
+      if (args.length !== 3) {
+        usage();
+        process.exit(1);
+      }
+      installCursorMcp(...args);
       return;
     case "opencode-mcp":
       if (args.length !== 4) {

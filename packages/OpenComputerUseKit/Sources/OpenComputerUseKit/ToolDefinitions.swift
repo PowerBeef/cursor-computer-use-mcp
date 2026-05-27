@@ -29,10 +29,13 @@ public struct ToolDefinition: @unchecked Sendable {
 }
 
 public enum ToolDefinitions {
+    private static let composerWorkflow =
+        "Workflow: list_apps → get_app_state (once per assistant turn) → act via element_index when available → verify with a follow-up get_app_state. "
+
     public static let all: [ToolDefinition] = [
         ToolDefinition(
             name: "click",
-            description: "Click an element by index or pixel coordinates from screenshot. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Click an element by index or pixel coordinates from the latest screenshot.",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -51,7 +54,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "drag",
-            description: "Drag from one point to another using pixel coordinates. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Drag from one point to another using pixel coordinates from the latest screenshot.",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -66,7 +69,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "get_app_state",
-            description: "Start an app use session if needed, then get the state of the app's key window and return a screenshot and accessibility tree. This must be called once per assistant turn before interacting with the app. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Start or refresh an app session and return the key window screenshot plus accessibility tree. Call once per turn before other actions on that app.",
             annotations: readOnlyAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -77,13 +80,13 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "list_apps",
-            description: "List the apps on this computer. Returns the set of apps that are currently running, as well as any that have been used in the last 14 days, including details on usage frequency. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "List running apps and recently used apps (last 14 days) with usage hints.",
             annotations: readOnlyAnnotations(),
             inputSchema: objectSchema(properties: [:], required: [])
         ),
         ToolDefinition(
             name: "perform_secondary_action",
-            description: "Invoke a secondary accessibility action exposed by an element. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Invoke a secondary accessibility action exposed by an element (for example Show Menu or Pick).",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -96,7 +99,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "press_key",
-            description: "Press a key or key-combination on the keyboard, including modifier and navigation keys.\n  - This supports xdotool's `key` syntax.\n  - Examples: \"a\", \"Return\", \"Tab\", \"super+c\", \"Up\", \"KP_0\" (for the numpad 0 key). This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Press a key or key combination (xdotool-style syntax, for example Return, Tab, super+c).",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -108,7 +111,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "scroll",
-            description: "Scroll an element in a direction by a number of pages. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Scroll an element in a direction by a number of pages.",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -122,7 +125,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "set_value",
-            description: "Set the value of a settable accessibility element. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Set the value of a settable accessibility element.",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [
@@ -135,7 +138,7 @@ public enum ToolDefinitions {
         ),
         ToolDefinition(
             name: "type_text",
-            description: "Type literal text using keyboard input. This tool is part of plugin `Computer Use`.",
+            description: composerWorkflow + "Type literal text using keyboard input.",
             annotations: defaultAnnotations(),
             inputSchema: objectSchema(
                 properties: [

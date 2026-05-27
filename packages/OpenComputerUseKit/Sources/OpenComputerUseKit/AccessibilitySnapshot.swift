@@ -394,24 +394,93 @@ private struct WindowCapture {
     }
 
     private static func captureImage(windowID: CGWindowID, bounds: CGRect) -> CGImage? {
+        if let image = attemptWindowCapture(windowID: windowID, bounds: bounds, forceRefreshShareableContent: false) {
+            return image
+        }
+
+        if let image = attemptWindowCapture(windowID: windowID, bounds: bounds, forceRefreshShareableContent: true) {
+            return image
+        }
+
+        return attemptDisplayCropCapture(windowBounds: bounds)
+    }
+
+    private static func attemptWindowCapture(
+        windowID: CGWindowID,
+        bounds: CGRect,
+        forceRefreshShareableContent: Bool
+    ) -> CGImage? {
         try? BlockingAsyncBridge.run(timeout: screenshotCaptureTimeout) {
             let shareableContent = try await SCShareableContent.current
             guard let window = shareableContent.windows.first(where: { $0.windowID == windowID }) else {
+                debugScreenshotCapture(
+                    "ScreenCaptureKit window \(windowID) missing from shareable content (refresh=\(forceRefreshShareableContent))"
+                )
                 return nil
             }
 
-            let configuration = SCStreamConfiguration()
-            let scaleFactor = bestEffortScaleFactor(for: bounds)
-            let captureSize = window.frame.isEmpty ? bounds.size : window.frame.size
-            configuration.width = max(1, Int(ceil(captureSize.width * scaleFactor)))
-            configuration.height = max(1, Int(ceil(captureSize.height * scaleFactor)))
-            configuration.showsCursor = false
-            configuration.scalesToFit = false
-            configuration.ignoreShadowsSingleWindow = true
-
+            let configuration = makeScreenshotConfiguration(for: window.frame.isEmpty ? bounds : window.frame, bounds: bounds)
             let filter = SCContentFilter(desktopIndependentWindow: window)
             return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
         }
+    }
+
+    private static func attemptDisplayCropCapture(windowBounds: CGRect) -> CGImage? {
+        try? BlockingAsyncBridge.run(timeout: screenshotCaptureTimeout) {
+            let shareableContent = try await SCShareableContent.current
+            guard let display = shareableContent.displays.first(where: { display in
+                display.frame.intersects(windowBounds)
+            }) else {
+                debugScreenshotCapture("ScreenCaptureKit display fallback found no display for bounds \(windowBounds)")
+                return nil
+            }
+
+            let configuration = makeScreenshotConfiguration(for: display.frame, bounds: windowBounds)
+            let filter = SCContentFilter(display: display, excludingWindows: [])
+            let displayImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+            return croppedImage(displayImage, cropRect: windowBounds, in: display.frame)
+        }
+    }
+
+    private static func makeScreenshotConfiguration(for captureFrame: CGRect, bounds: CGRect) -> SCStreamConfiguration {
+        let configuration = SCStreamConfiguration()
+        let scaleFactor = bestEffortScaleFactor(for: bounds)
+        configuration.width = max(1, Int(ceil(captureFrame.width * scaleFactor)))
+        configuration.height = max(1, Int(ceil(captureFrame.height * scaleFactor)))
+        configuration.showsCursor = false
+        configuration.scalesToFit = false
+        configuration.ignoreShadowsSingleWindow = true
+        return configuration
+    }
+
+    private static func croppedImage(_ image: CGImage, cropRect: CGRect, in displayFrame: CGRect) -> CGImage? {
+        let scaleX = CGFloat(image.width) / displayFrame.width
+        let scaleY = CGFloat(image.height) / displayFrame.height
+        let pixelRect = CGRect(
+            x: (cropRect.minX - displayFrame.minX) * scaleX,
+            y: (displayFrame.maxY - cropRect.maxY) * scaleY,
+            width: cropRect.width * scaleX,
+            height: cropRect.height * scaleY
+        ).integral
+
+        guard pixelRect.width > 0, pixelRect.height > 0 else {
+            return nil
+        }
+
+        let clamped = pixelRect.intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard clamped.width > 0, clamped.height > 0 else {
+            return nil
+        }
+
+        return image.cropping(to: clamped)
+    }
+
+    private static func debugScreenshotCapture(_ message: String) {
+        guard inputFallbackDebugEnabled(environment: ProcessInfo.processInfo.environment) else {
+            return
+        }
+
+        fputs("[open-computer-use] screenshot \(message)\n", stderr)
     }
 
     private static func bestEffortScaleFactor(for bounds: CGRect) -> CGFloat {
@@ -540,13 +609,21 @@ private final class AsyncResultBox<T>: @unchecked Sendable {
 }
 
 enum BlockingAsyncBridge {
+    private static let cancellationGracePeriod: TimeInterval = 0.5
+
     static func run<T>(timeout: TimeInterval? = nil, _ operation: @escaping @Sendable () async throws -> T) throws -> T {
         let semaphore = DispatchSemaphore(value: 0)
         let resultBox = AsyncResultBox<T>()
 
         let task = Task.detached {
             do {
+                if Task.isCancelled {
+                    return
+                }
+
                 resultBox.result = .success(try await operation())
+            } catch is CancellationError {
+                return
             } catch {
                 resultBox.result = .failure(error)
             }
@@ -556,6 +633,7 @@ enum BlockingAsyncBridge {
 
         guard waitForSignal(semaphore, timeout: timeout) else {
             task.cancel()
+            _ = waitForSignal(semaphore, timeout: cancellationGracePeriod)
             throw ComputerUseError.message("ScreenCaptureKit screenshot task timed out after \(timeout ?? 0) seconds.")
         }
 

@@ -6,6 +6,11 @@
     "npm:build": "node ./scripts/npm/build-packages.mjs",
     "npm:pack": "./scripts/release-package.sh",
     "npm:publish": "node ./scripts/npm/publish-packages.mjs",
-    "package:skill": "./scripts/package-skill.sh"
+    "package:skill": "./scripts/package-skill.sh",
+    "benchmark": "tsx benchmarks/run.ts",
+    "benchmark:calibrate": "tsx benchmarks/calibrate.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
   }
 }

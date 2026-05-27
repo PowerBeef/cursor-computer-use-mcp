@@ -1,0 +1,10 @@
+{
+  "denyPasswordManagers": true,
+  "allowApps": [
+    "TextEdit",
+    "Google Chrome",
+    "Simulator",
+    "com.apple.iphonesimulator"
+  ],
+  "denyBundleIds": []
+}

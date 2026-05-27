@@ -29,10 +29,24 @@ public enum SystemPermissionKind: String, CaseIterable, Sendable {
     public var settingsURL: URL {
         switch self {
         case .accessibility:
-            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+            return settingsDeepLink(
+                modern: "x-apple.systemsettings:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+                legacy: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+            )
         case .screenRecording:
-            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
+            return settingsDeepLink(
+                modern: "x-apple.systemsettings:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture",
+                legacy: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+            )
         }
+    }
+
+    private func settingsDeepLink(modern: String, legacy: String) -> URL {
+        if let modernURL = URL(string: modern) {
+            return modernURL
+        }
+
+        return URL(string: legacy)!
     }
 
     public var dragInstruction: String {

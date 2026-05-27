@@ -353,10 +353,12 @@ public final class ComputerUseService {
     public init() {}
 
     public func listApps() -> ToolCallResult {
-        ToolCallResult.text(
-            AppDiscovery.listCatalog()
-                .map(\.renderedLine)
-                .joined(separator: "\n")
+        MCPTextTruncation.truncate(
+            ToolCallResult.text(
+                AppDiscovery.listCatalog()
+                    .map(\.renderedLine)
+                    .joined(separator: "\n")
+            )
         )
     }
 
@@ -1686,6 +1688,6 @@ public final class ComputerUseService {
         if let screenshotPNGData = snapshot.screenshotPNGData {
             content.append(.pngImage(screenshotPNGData))
         }
-        return ToolCallResult(content: content)
+        return MCPTextTruncation.truncate(ToolCallResult(content: content))
     }
 }

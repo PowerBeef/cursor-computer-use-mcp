@@ -225,6 +225,7 @@ const installCommands = new Map([
   ["install-claude-mcp", "install-claude-mcp.sh"],
   ["install-clauce-mcp", "install-claude-mcp.sh"],
   ["install-gemini-mcp", "install-gemini-mcp.sh"],
+  ["install-cursor-mcp", "install-cursor-mcp.sh"],
   ["install-codex-mcp", "install-codex-mcp.sh"],
   ["install-opencode-mcp", "install-opencode-mcp.sh"],
   ["install-codex-plugin", "install-codex-plugin.sh"],
@@ -246,6 +247,7 @@ Commands:
   turn-ended           Notify the running MCP process that the host turn ended.
   install-claude-mcp   Install the MCP server into ~/.claude.json for this project.
   install-gemini-mcp   Install the MCP server into Gemini CLI config.
+  install-cursor-mcp   Install the MCP server into Cursor MCP config (~/.cursor/mcp.json).
   install-codex-mcp    Install the MCP server into ~/.codex/config.toml.
   install-opencode-mcp Install the MCP server into ~/.config/opencode.
   install-codex-plugin Install this npm package into the local Codex plugin cache.
@@ -350,6 +352,11 @@ if (command === "help" && args[1] === "install-codex-mcp") {
 
 if (command === "help" && args[1] === "install-gemini-mcp") {
   printInstallHelp("install-gemini-mcp.sh", "open-computer-use install-gemini-mcp [--scope project|user]");
+  process.exit(0);
+}
+
+if (command === "help" && args[1] === "install-cursor-mcp") {
+  printInstallHelp("install-cursor-mcp.sh", "open-computer-use install-cursor-mcp [--scope user|project]");
   process.exit(0);
 }
 
@@ -459,6 +466,8 @@ open-computer-use doctor
 open-computer-use install-claude-mcp
 open-computer-use install-gemini-mcp
 open-computer-use install-gemini-mcp --scope user
+open-computer-use install-cursor-mcp
+open-computer-use install-cursor-mcp --scope project
 open-computer-use install-codex-mcp
 open-computer-use install-opencode-mcp
 open-computer-use install-codex-plugin
@@ -468,7 +477,7 @@ open-computer-use install-codex-plugin
 
 - Version: \`${version}\`
 - Supported npm platforms: \`darwin-arm64\`, \`darwin-x64\`, \`linux-arm64\`, \`linux-x64\`, \`win32-arm64\`, \`win32-x64\`
-- macOS still requires \`Accessibility\` and \`Screen Recording\` permissions.
+- macOS bundled \`.app\` requires **macOS 26 (Tahoe)+**, plus \`Accessibility\` and \`Screen Recording\` permissions granted to Open Computer Use.app.
 - Linux requires a signed-in desktop session with AT-SPI2 / D-Bus accessibility available for real app control.
 - Windows requires a signed-in desktop session for UI Automation access.
 
@@ -528,6 +537,7 @@ function renderMetaPackageJson(packageName, version) {
       "plugins/open-computer-use/scripts/",
       "scripts/install-claude-mcp.sh",
       "scripts/install-gemini-mcp.sh",
+      "scripts/install-cursor-mcp.sh",
       "scripts/install-config-helper.mjs",
       "scripts/install-codex-mcp.sh",
       "scripts/install-opencode-mcp.sh",
@@ -542,6 +552,7 @@ function renderMetaPackageJson(packageName, version) {
 function copyInstallerScripts(packageRoot) {
   cpSync(path.join(repoRoot, "scripts", "install-claude-mcp.sh"), path.join(packageRoot, "scripts", "install-claude-mcp.sh"));
   cpSync(path.join(repoRoot, "scripts", "install-gemini-mcp.sh"), path.join(packageRoot, "scripts", "install-gemini-mcp.sh"));
+  cpSync(path.join(repoRoot, "scripts", "install-cursor-mcp.sh"), path.join(packageRoot, "scripts", "install-cursor-mcp.sh"));
   cpSync(path.join(repoRoot, "scripts", "install-config-helper.mjs"), path.join(packageRoot, "scripts", "install-config-helper.mjs"));
   cpSync(path.join(repoRoot, "scripts", "install-codex-mcp.sh"), path.join(packageRoot, "scripts", "install-codex-mcp.sh"));
   cpSync(path.join(repoRoot, "scripts", "install-opencode-mcp.sh"), path.join(packageRoot, "scripts", "install-opencode-mcp.sh"));
@@ -550,6 +561,7 @@ function copyInstallerScripts(packageRoot) {
   for (const scriptName of [
     "install-claude-mcp.sh",
     "install-gemini-mcp.sh",
+    "install-cursor-mcp.sh",
     "install-codex-mcp.sh",
     "install-opencode-mcp.sh",
     "install-codex-plugin.sh",

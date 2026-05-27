@@ -54,6 +54,16 @@ enum AppDiscovery {
     private static let useCountAttribute = "kMDItemUseCount"
     private static let maxRecentNonRunningApps = 10
     private static let fixtureListBundleIdentifier = "dev.opencodex.opencomputeruse.fixture"
+    private static let systemSettingsBundleIdentifiers = [
+        "com.apple.systempreferences",
+        "com.apple.settings",
+    ]
+    private static let appQueryAliases: [String: String] = [
+        "system settings": "com.apple.systempreferences",
+        "settings": "com.apple.systempreferences",
+        "réglages système": "com.apple.systempreferences",
+        "reglages systeme": "com.apple.systempreferences",
+    ]
     private static let standardApplicationSearchRoots: [URL] = [
         URL(fileURLWithPath: "/Applications", isDirectory: true),
         URL(fileURLWithPath: "/System/Applications", isDirectory: true),
@@ -118,7 +128,9 @@ enum AppDiscovery {
         let sorted = entriesByBundle.values.sorted(by: compareListedApps)
         let runningEntries = sorted.filter(\.isRunning)
         let recentEntries = sorted.filter { !$0.isRunning }.prefix(maxRecentNonRunningApps)
-        return runningEntries + recentEntries
+        return (runningEntries + recentEntries).filter { entry in
+            !ComputerUsePolicy.isBlocked(bundleIdentifier: entry.bundleIdentifier, appName: entry.name)
+        }
     }
 
     static func runningApps() -> [RunningAppDescriptor] {
@@ -142,14 +154,19 @@ enum AppDiscovery {
     }
 
     static func resolve(_ query: String) throws -> RunningAppDescriptor {
-        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedQuery = normalizeAppQuery(query.trimmingCharacters(in: .whitespacesAndNewlines))
         let running = runningApps()
 
-        if let bundleIdentifier = blockedBundleIdentifier(forQuery: normalizedQuery) {
-            throw AppSafetyPolicy.permissionDenied(bundleIdentifier: bundleIdentifier)
+        if ComputerUsePolicy.isBlocked(query: normalizedQuery) {
+            throw ComputerUsePolicy.permissionDenied(reference: normalizedQuery)
         }
 
         if let match = resolvedRunningApp(in: running, matching: normalizedQuery) {
+            try ComputerUsePolicy.assertAccess(
+                query: normalizedQuery,
+                bundleIdentifier: match.bundleIdentifier,
+                appName: match.name
+            )
             return match
         }
 
@@ -157,6 +174,11 @@ enum AppDiscovery {
 
         for _ in 0..<20 {
             if let launched = resolvedRunningApp(in: runningApps(), matching: normalizedQuery) {
+                try ComputerUsePolicy.assertAccess(
+                    query: normalizedQuery,
+                    bundleIdentifier: launched.bundleIdentifier,
+                    appName: launched.name
+                )
                 return launched
             }
 
@@ -166,15 +188,31 @@ enum AppDiscovery {
         throw ComputerUseError.appNotFound(normalizedQuery)
     }
 
+    internal static func normalizeAppQueryForTesting(_ query: String) -> String {
+        normalizeAppQuery(query)
+    }
+
+    private static func normalizeAppQuery(_ query: String) -> String {
+        let key = query.lowercased()
+        return appQueryAliases[key] ?? query
+    }
+
     private static func resolvedRunningApp(in descriptors: [RunningAppDescriptor], matching query: String) -> RunningAppDescriptor? {
         if isBundleIdentifierQuery(query) {
+            let aliases = bundleIdentifierAliases(for: query)
             return descriptors.first(where: { descriptor in
-                descriptor.bundleIdentifier?.caseInsensitiveCompare(query) == .orderedSame
+                guard let bundleIdentifier = descriptor.bundleIdentifier else {
+                    return false
+                }
+
+                return aliases.contains { alias in
+                    bundleIdentifier.caseInsensitiveCompare(alias) == .orderedSame
+                }
             })
         }
 
         return descriptors.first(where: { descriptor in
-            guard !AppSafetyPolicy.isBlocked(bundleIdentifier: descriptor.bundleIdentifier) else {
+            guard !ComputerUsePolicy.isBlocked(bundleIdentifier: descriptor.bundleIdentifier, appName: descriptor.name) else {
                 return false
             }
 
@@ -252,12 +290,15 @@ enum AppDiscovery {
 
     private static func launchIfPossible(_ query: String) throws {
         if isBundleIdentifierQuery(query) {
-            guard !AppSafetyPolicy.isBlocked(bundleIdentifier: query) else {
+            guard !ComputerUsePolicy.isBlocked(query: query) else {
                 return
             }
 
-            if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: query) {
-                try openApplication(at: appURL)
+            for bundleIdentifier in bundleIdentifierAliases(for: query) {
+                if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+                    try openApplication(at: appURL)
+                    return
+                }
             }
             return
         }
@@ -266,7 +307,10 @@ enum AppDiscovery {
             return
         }
 
-        if AppSafetyPolicy.isBlocked(bundleIdentifier: Bundle(url: appURL)?.bundleIdentifier) {
+        if ComputerUsePolicy.isBlocked(
+            bundleIdentifier: Bundle(url: appURL)?.bundleIdentifier,
+            appName: query
+        ) {
             return
         }
 
@@ -350,16 +394,17 @@ enum AppDiscovery {
         return calendar.date(byAdding: .day, value: -13, to: startOfToday) ?? startOfToday
     }
 
-    private static func blockedBundleIdentifier(forQuery query: String) -> String? {
-        guard isBundleIdentifierQuery(query), AppSafetyPolicy.isBlocked(bundleIdentifier: query) else {
-            return nil
-        }
-
-        return query
-    }
-
     private static func isBundleIdentifierQuery(_ query: String) -> Bool {
         query.contains(".")
+    }
+
+    private static func bundleIdentifierAliases(for query: String) -> [String] {
+        let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if systemSettingsBundleIdentifiers.contains(where: { $0.caseInsensitiveCompare(normalized) == .orderedSame }) {
+            return systemSettingsBundleIdentifiers
+        }
+
+        return [normalized]
     }
 
     private static func isUserFacingListApp(_ app: NSRunningApplication) -> Bool {
@@ -507,6 +552,7 @@ enum AppSafetyPolicy {
     private static let blockedBundleIdentifiers: Set<String> = [
         "com.1password.1password",
         "com.1password.safari",
+        "com.apple.Passwords",
         "com.bitwarden.desktop",
         "com.dashlane.dashlanephonefinal",
         "com.lastpass.LastPass",

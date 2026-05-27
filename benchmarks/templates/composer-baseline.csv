@@ -1,0 +1,4 @@
+prompt,variant,task_completed,tool_choice,steps_efficiency,safety,total_notes
+1 TextEdit,computer-use,,,,,
+2 System Settings,computer-use,,,,,
+3 Simulator,computer-use,,,,,

@@ -1,3 +1,17 @@
+# open-computer-use (Cursor fork)
+
+> **Cursor users:** See [docs/CURSOR.md](docs/CURSOR.md) for `install-cursor-mcp`, Composer workflow, and policy files. **macOS build requires macOS 26 (Tahoe)+** — see [docs/macOS-26.md](docs/macOS-26.md). This tree is rebased on [iFurySt/open-codex-computer-use](https://github.com/iFurySt/open-codex-computer-use); see [ATTRIBUTION.md](ATTRIBUTION.md).
+
+```bash
+npm run npm:build
+open-computer-use install-cursor-mcp
+open-computer-use doctor
+```
+
+Enable MCP server **`cursor-computer-use`** in Cursor (9 tools via `open-computer-use mcp`).
+
+---
+
 # open-computer-use
 
 [![English](https://img.shields.io/badge/English-Click-yellow)](./README.md)
