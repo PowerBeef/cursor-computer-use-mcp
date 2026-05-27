@@ -1,0 +1,4 @@
+prompt,variant,task_completed,tool_choice,steps_efficiency,safety,total_notes
+1 TextEdit,legacy,,,,,
+2 System Settings,legacy,,,,,
+3 Simulator,legacy,,,,,

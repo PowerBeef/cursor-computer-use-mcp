@@ -1,24 +1,24 @@
-# Execution Plan 使用说明
+# Execution plan guide
 
-execution plan 适合用在那些超出单轮聊天上下文、需要多次推进或风险较高的任务上。
+Use execution plans for work that exceeds one chat turn, needs multiple commits, or carries meaningful risk.
 
-## 什么时候该建 plan
+## When to create a plan
 
-- 任务会跨多个 commit 或多轮工作推进。
-- 这次改动会影响架构、协议、数据迁移或其他高风险区域。
-- 完成任务依赖阶段性验证、回滚策略或关键决策留痕。
-- 可能会有多个人或多个 Agent 在一段时间内共同推进。
+- The task spans several commits or work sessions.
+- The change touches architecture, protocols, migrations, or other high-risk areas.
+- You need staged validation, rollback thinking, or a record of key decisions.
+- Multiple people or agents may work on it over time.
 
-## 存放位置
+## Where plans live
 
-- 进行中的 plan 放在 `docs/exec-plans/active/`
-- 已完成的 plan 移到 `docs/exec-plans/completed/`
-- 复用模板在 `docs/exec-plans/templates/execution-plan.md`
-- 暂不处理但值得保留的债务放到 `docs/exec-plans/tech-debt-tracker.md`
+- In progress: `docs/exec-plans/active/`
+- Completed: `docs/exec-plans/completed/`
+- Template: [exec-plans/templates/execution-plan.md](exec-plans/templates/execution-plan.md)
+- Deferred debt: [exec-plans/tech-debt-tracker.md](exec-plans/tech-debt-tracker.md)
 
-## 维护要求
+## Maintenance
 
-- 写清目标、范围、约束、风险和验证方式。
-- 推进过程和关键决定要落在仓库里，不要只存在聊天记录里。
-- 状态变化要同步更新。
-- 过期 plan 要及时关闭、归档或清理，保证 active 目录可信。
+- State goals, scope, constraints, risks, and how you will verify success.
+- Record progress and decisions in the repo, not only in chat.
+- Update status as the plan moves.
+- Close, archive, or remove stale plans so `active/` stays trustworthy.

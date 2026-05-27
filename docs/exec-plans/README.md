@@ -1,8 +1,14 @@
-# Execution Plans
+# Execution plans
 
-这个目录用于存放长期任务的执行计划。
+Long-running tasks live here as execution plans.
 
-- 进行中的计划放在 `active/`
-- 已完成的计划移到 `completed/`
-- 新计划从 `templates/execution-plan.md` 开始
-- 暂时不做但需要持续跟踪的问题放到 `tech-debt-tracker.md`
+- **In progress:** [active/](active/)
+- **Completed:** [completed/](completed/)
+- **New plans:** start from [templates/execution-plan.md](templates/execution-plan.md)
+- **Deferred issues:** [tech-debt-tracker.md](tech-debt-tracker.md)
+
+## Fork maintainers
+
+Plans under `active/` that focus on **cursor overlay**, **cursor lab**, or **binary motion reconstruction** are upstream research backlog. Move them to `completed/` when finished, or ignore them unless you are actively working on visual cursor / overlay behavior.
+
+Platform work (npm distribution, Linux/Windows runtime, permission onboarding, official tool alignment) should be **completed** when shipped; see matching entries in `docs/histories/`.

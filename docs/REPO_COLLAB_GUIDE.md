@@ -1,47 +1,47 @@
-# 仓库协作约定
+# Repository collaboration guide
 
-这份文档定义的是一个 Agent-first 仓库的默认协作方式。真正和技术栈强相关的约束，建议拆到相邻专题文档里维护，不要把这里写成大杂烩。
+This document defines default collaboration for an agent-first repository. Stack-specific constraints belong in focused docs nearby; do not turn this file into a catch-all.
 
-## 开发原则
+## Development principles
 
-- 优先选择简单、清晰、可观测的方案，不要堆难以维护的复杂度。
-- 以 Agent 可读、可执行为目标组织仓库；重要信息如果只存在聊天记录和脑子里，等于不存在。
-- 代码、文档、测试、配置和发布记录要尽量同源更新。
-- 如果 Agent 在同一类问题上反复失败，优先修环境、修脚手架、修规范，不要把“多试几次 prompt”当主方案。
-- 每次修 bug，都顺手检查测试和文档是否该补强，尽量让同类问题只修一次。
+- Prefer simple, clear, observable solutions over hard-to-maintain complexity.
+- Organize the repo so agents can read and execute it; knowledge that lives only in chat is effectively missing.
+- Update code, docs, tests, config, and release records together when behavior changes.
+- If agents repeatedly fail the same way, fix environment, scaffolding, or rules—not “try another prompt.”
+- When fixing a bug, strengthen tests and docs so the same class of issue is less likely to recur.
 
-## 文档纪律
+## Documentation discipline
 
-- `AGENTS.md` 只做路由，不要在里面堆一大坨规则。
-- `docs/` 是仓库级知识的正式来源。
-- 行为一旦变化，对应文档就要在同一次改动里同步更新。
-- 仓库内文件、目录、脚本入口和文档链接一律使用相对路径，不要写任何机器相关的绝对路径。
-- 比起继续往大文档里堆内容，更推荐新增一份边界清楚的小文档。
+- [AGENTS.md](../AGENTS.md) is navigation only; do not pile rules there.
+- [docs/](README.md) is the canonical source for repository knowledge.
+- When behavior changes, update the relevant doc in the same change.
+- Use relative paths for files, directories, scripts, and links—never machine-specific absolute paths.
+- Prefer new, bounded docs over growing one giant document.
 
-## Git 与评审
+## Git and review
 
-- commit 尽量保持范围清晰、描述准确。
-- `git push` 前先同步远端最新代码，避免把过期分支状态直接推上去。
-- 提交或发 PR 前，确认文档、示例、脚本和 history 是否已经反映最终状态。
-- 复杂或高风险改动，先落一份 execution plan 到 `docs/exec-plans/`。
-- 评审里尽量引用仓库内文件，不要依赖只有少数人知道的上下文。
+- Keep commits scoped and accurately described.
+- Sync with the remote before `git push` so you do not push stale branch state.
+- Before submit or PR, confirm docs, examples, scripts, and histories reflect the final state.
+- For complex or high-risk work, add an execution plan under `docs/exec-plans/`.
+- In review, cite repository files; do not rely on private context.
 
-## 测试与验证
+## Testing and validation
 
-- 每次有实质性代码变更，都应该让验证能力比改之前更强一点。
-- 优先沉淀成仓库里可直接运行的命令和脚本。
-- 如果项目包含 UI，要保证本地能独立启动、验证。
-- 如果项目依赖 logs、metrics、traces，最好能提供本地或 CI 可用的访问路径。
-- 即使项目还没接入真实业务构建链路，仓库级 CI 也应该先能跑起来。
+- Substantive code changes should leave the repo easier to verify than before.
+- Prefer commands and scripts that anyone can run from the repo root.
+- If the project has a UI, it should be startable and verifiable locally.
+- If you rely on logs, metrics, or traces, document how to access them locally or in CI.
+- Repository CI should run even before a full product build pipeline exists.
 
-## CI/CD 与交付方式
+## CI/CD and delivery
 
-- CI 至少要守住仓库可读性和基础安全，不要等项目变大后再补。
-- CD 骨架应该优先产出明确制品和 provenance，而不是过早假设部署目标。
-- 未来接入真实技术栈时，优先在现有流水线上扩展，不要另起一套临时脚本把它绕开。
+- CI should guard readability and basic security early; do not defer it until the project is large.
+- CD skeletons should produce clear artifacts and provenance before assuming a deploy target.
+- When adding a real stack, extend existing pipelines instead of one-off bypass scripts.
 
-## 配置卫生
+## Configuration hygiene
 
-- 示例配置和实际默认值要尽量一致。
-- 所有启动所需的环境变量和外部依赖都要写清楚。
-- 不要让关键初始化步骤只存在 README 的角落里，能脚本化就脚本化。
+- Example config should match real defaults where possible.
+- Document required environment variables and external dependencies.
+- Script critical setup steps; do not hide them only in a README corner.

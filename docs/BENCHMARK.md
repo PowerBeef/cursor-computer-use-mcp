@@ -19,7 +19,7 @@ Validated on Tahoe host (darwin/arm64, global `open-computer-use`):
 | `./scripts/run-tool-smoke-tests.sh` | 9-tool smoke passed |
 | `BENCHMARK_TRIALS=1 npm run benchmark` | All OCU tasks 100% (cold_start, screenshot_latency, textedit_type, policy) |
 
-Latest report: `benchmarks/results/2026-05-27T17-14-09-450Z/report.md`
+Example report (local, not committed): `benchmarks/results/2026-05-27T17-14-09-450Z/report.md`. The `benchmarks/results/` directory is gitignored.
 
 See [macOS-26.md](macOS-26.md) for Tahoe capture troubleshooting.
 
@@ -36,7 +36,7 @@ BENCHMARK_TRIALS=1 npm run benchmark
 BENCHMARK_LEGACY=1 BENCHMARK_TRIALS=1 npm run benchmark
 ```
 
-Results land in `benchmarks/results/<timestamp>/report.md` with JSON per variant.
+Results land in `benchmarks/results/<timestamp>/report.md` with JSON per variant (`ocu.json`, optional `legacy.json`). Do not commit `benchmarks/results/`.
 
 ## Tasks
 
@@ -49,7 +49,7 @@ Results land in `benchmarks/results/<timestamp>/report.md` with JSON per variant
 
 ## Composer rubric (manual)
 
-See `benchmarks/composer-prompts.md`, `benchmarks/composer-rubric.md`, and CSV templates under `benchmarks/templates/`.
+See [benchmarks/composer-prompts.md](../benchmarks/composer-prompts.md), [benchmarks/composer-rubric.md](../benchmarks/composer-rubric.md), and templates `composer-ocu.csv` / `composer-legacy.csv` under [benchmarks/templates/](../benchmarks/templates/).
 
 ## Environment
 

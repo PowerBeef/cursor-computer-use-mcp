@@ -1,11 +1,21 @@
 # Attribution
 
-This repository is a **Cursor-focused fork** of [open-codex-computer-use](https://github.com/iFurySt/open-codex-computer-use) by iFurySt and contributors.
+## This project
 
-- **Upstream:** https://github.com/iFurySt/open-codex-computer-use  
-- **License:** MIT (see [LICENSE](LICENSE))  
-- **Fork:** https://github.com/PowerBeef/cursor-computer-use-mcp  
+**Cursor Computer Use** is distributed in this repository. It provides Cursor-focused MCP integration, policy controls, Composer-tuned tool descriptions, macOS 26 (Tahoe) native builds, skills, benchmarks, and related documentation.
 
-Cursor-specific additions (install helpers, policy files, Composer-tuned tool descriptions, skills, and benchmarks) are maintained in this fork. The **macOS native build in this fork targets macOS 26 (Tahoe)+**; Linux and Windows npm runtimes remain cross-platform.
+## Third-party software
 
-For the canonical platform-neutral documentation, refer to upstream `README.md` and `docs/`.
+Core desktop automation derives from **[open-codex-computer-use](https://github.com/iFurySt/open-codex-computer-use)** (MIT). That project implements the native Swift MCP server, cross-platform npm packaging, and the `open-computer-use` CLI used by this distribution.
+
+Modifications and additions in this repository include:
+
+- `install-cursor-mcp` and Cursor MCP configuration (`cursor-computer-use` server name)
+- `ComputerUsePolicy` and `.cursor/computer-use-policy.json`
+- macOS 26 minimum for the native macOS Swift build (`Package.swift`)
+- Cursor skill pack under `skills/cursor-computer-use/`
+- Documentation under `docs/` (see [docs/README.md](docs/README.md))
+
+## License
+
+This repository is released under the [MIT License](LICENSE). The MIT License from the upstream project applies to the portions derived from open-codex-computer-use; see the upstream repository for its copyright notice.

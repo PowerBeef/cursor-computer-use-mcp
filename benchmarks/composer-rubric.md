@@ -13,8 +13,8 @@ Score each dimension **0**, **1**, or **2** per run.
 
 ## Procedure
 
-1. Disable `computer-use`, enable only `cursor-computer-use`.
+1. Disable legacy `computer-use-mcp`; enable only **`cursor-computer-use`** (OCU).
 2. Run all prompts in [composer-prompts.md](./composer-prompts.md).
-3. Copy `benchmarks/templates/composer-new.csv` → `benchmarks/results/composer-new.csv` and fill in.
-4. Disable `cursor-computer-use`, enable only `computer-use`.
-5. Repeat prompts → copy `benchmarks/templates/composer-baseline.csv` and fill in.
+3. Copy `benchmarks/templates/composer-ocu.csv` → `benchmarks/results/composer-ocu.csv` and fill in.
+4. (Optional) Disable `cursor-computer-use`; enable only **`computer-use-mcp`** (legacy).
+5. Repeat prompts → copy `benchmarks/templates/composer-legacy.csv` → `benchmarks/results/composer-legacy.csv` and fill in.

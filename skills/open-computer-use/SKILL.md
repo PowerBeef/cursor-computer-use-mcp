@@ -5,6 +5,8 @@ description: Platform-neutral guidance for using Open Computer Use, the open-sou
 
 # Open Computer Use
 
+**Using Cursor on macOS 26+?** Use [cursor-computer-use/SKILL.md](../cursor-computer-use/SKILL.md) and [docs/CURSOR.md](../../docs/CURSOR.md) instead of this platform-neutral skill.
+
 ## Overview
 
 Open Computer Use exposes Computer Use as a local CLI and stdio MCP server. It is not Codex.app-specific; adapt the commands and MCP config to the agent runtime you are operating in.

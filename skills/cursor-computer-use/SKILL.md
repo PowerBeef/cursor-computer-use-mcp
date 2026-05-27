@@ -15,14 +15,9 @@ description: Operate macOS 26+ desktop apps via Cursor Computer Use MCP (9 Codex
 
 ## Setup
 
-1. **macOS 26 (Tahoe)+** required for the native macOS build
-2. `npm run npm:build` in this repo, or `npm i -g open-computer-use`
-3. Grant **Accessibility** and **Screen Recording** to **Open Computer Use.app** (`open-computer-use doctor`)
-4. `open-computer-use install-cursor-mcp` (or project `.cursor/mcp.json`)
-5. Enable MCP server `cursor-computer-use` in Cursor (9 tools)
-6. Optional: `.cursor/computer-use-policy.json` from `.cursor/computer-use-policy.example.json`
+Full install, permissions, MCP config, and policy: **[docs/CURSOR.md](../../docs/CURSOR.md)** (canonical).
 
-Tahoe-specific notes: [docs/macOS-26.md](../../docs/macOS-26.md)
+Tahoe capture troubleshooting: [docs/macOS-26.md](../../docs/macOS-26.md)
 
 ## Composer workflow
 
@@ -36,14 +31,12 @@ For rare AppleScript-friendly one-offs (Mail, Finder scripts), use the **shell**
 
 ## Rules
 
+- Enable **`cursor-computer-use`** only (9 tools); disable legacy **`computer-use-mcp`**
 - One clear app per task
-- Password managers are blocked by default policy
+- Never target **Passwords** (`com.apple.Passwords`) or other denylisted apps; password managers blocked by policy
 - Ask before send/purchase/delete/upload actions
 - Prefer `set_value` and keyboard shortcuts over blind coordinate clicks
 
 ## Troubleshooting
 
-- Permissions → `open-computer-use doctor` (grant **Open Computer Use.app**)
-- Wrong tool count → disable legacy `computer-use-mcp`; use only `cursor-computer-use`
-- Tahoe capture issues → [docs/macOS-26.md](../../docs/macOS-26.md)
-- Docs → [docs/CURSOR.md](../../docs/CURSOR.md)
+See [docs/CURSOR.md](../../docs/CURSOR.md) and [docs/macOS-26.md](../../docs/macOS-26.md).

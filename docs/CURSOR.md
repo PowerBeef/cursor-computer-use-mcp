@@ -1,6 +1,6 @@
-# Cursor + Open Computer Use
+# Cursor Computer Use
 
-This fork adds Cursor-specific install helpers, policy files, Composer-tuned MCP tool descriptions, and a `cursor-computer-use` skill pack on top of [open-codex-computer-use](https://github.com/iFurySt/open-codex-computer-use).
+Cursor Computer Use provides install helpers, policy files, Composer-tuned MCP tool descriptions, and a `cursor-computer-use` skill pack for the native `open-computer-use` MCP server.
 
 **macOS requirement:** build and run the native macOS `.app` / CLI on **macOS 26 (Tahoe) or later**. See [macOS-26.md](macOS-26.md) for Tahoe-specific capture and permission notes.
 
@@ -71,11 +71,6 @@ open-computer-use turn-ended
 
 Copy or install `skills/cursor-computer-use/` into your Cursor skills directory, or use the packaged skill after publish.
 
-## Upstream sync
+## Merging automation updates
 
-```bash
-git fetch upstream
-git rebase upstream/main
-```
-
-See [ATTRIBUTION.md](../ATTRIBUTION.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
+When pulling in changes from the upstream automation project, use your `upstream` remote and rebase. See [ATTRIBUTION.md](../ATTRIBUTION.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).

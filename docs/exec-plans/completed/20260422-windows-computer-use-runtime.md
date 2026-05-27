@@ -1,3 +1,5 @@
+> **Status: Completed.** See `docs/histories/2026-04/20260422-1246-add-windows-computer-use-runtime.md`.
+
 # Windows Computer Use Runtime
 
 ## 目标

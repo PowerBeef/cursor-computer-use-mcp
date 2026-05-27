@@ -8,6 +8,11 @@ required_files=(
   "AGENTS.md"
   "README.md"
   "CONTRIBUTING.md"
+  "docs/README.md"
+  "docs/FORK.md"
+  "docs/CURSOR.md"
+  "docs/macOS-26.md"
+  "docs/BENCHMARK.md"
   "docs/REPO_COLLAB_GUIDE.md"
   "docs/HISTORY_GUIDE.md"
   "docs/PLANS_GUIDE.md"
@@ -28,26 +33,27 @@ required_files=(
   "docs/exec-plans/tech-debt-tracker.md"
   "docs/histories/template.md"
   "docs/releases/feature-release-notes.md"
+  "benchmarks/README.md"
 )
 
 missing=0
 
 for path in "${required_files[@]}"; do
   if [[ ! -f "${repo_root}/${path}" ]]; then
-    echo "缺少必要文件: ${path}"
+    echo "Missing required file: ${path}"
     missing=1
   fi
 done
 
 for dir in docs/exec-plans/active docs/exec-plans/completed docs/histories; do
   if [[ ! -d "${repo_root}/${dir}" ]]; then
-    echo "缺少必要目录: ${dir}"
+    echo "Missing required directory: ${dir}"
     missing=1
   fi
 done
 
 if ! grep -q "docs/" "${repo_root}/AGENTS.md"; then
-  echo "AGENTS.md 应明确指向 docs/，说明它是仓库知识的正式来源"
+  echo "AGENTS.md should point to docs/ as the canonical knowledge source"
   missing=1
 fi
 
@@ -55,4 +61,6 @@ if [[ "${missing}" -ne 0 ]]; then
   exit 1
 fi
 
-echo "文档骨架检查通过"
+"${repo_root}/scripts/check-doc-links.sh"
+
+echo "Documentation skeleton check passed"

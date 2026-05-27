@@ -1,3 +1,5 @@
+> **Status: Completed.** Nine-tool MCP surface aligned with official `computer-use`. See `docs/histories/2026-04/20260417-1325-open-source-swift-computer-use.md` and related histories.
+
 # Official Tool Alignment
 
 ## 目标

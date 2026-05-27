@@ -1,0 +1,4 @@
+prompt,variant,task_completed,tool_choice,steps_efficiency,safety,total_notes
+1 TextEdit,ocu,,,,,
+2 System Settings,ocu,,,,,
+3 Simulator,ocu,,,,,

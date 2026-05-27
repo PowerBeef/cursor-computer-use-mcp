@@ -1,3 +1,5 @@
+> **Status: Completed.** See `docs/histories/2026-04/20260422-2036-add-linux-computer-use-runtime.md`.
+
 # Linux Computer Use Runtime
 
 ## 目标

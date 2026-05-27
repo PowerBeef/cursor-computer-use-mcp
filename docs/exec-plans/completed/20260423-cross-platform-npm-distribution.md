@@ -1,3 +1,5 @@
+> **Status: Completed.** See `docs/histories/2026-04/20260423-1151-add-cross-platform-npm-packages.md`.
+
 # Cross-platform npm distribution
 
 ## 目标

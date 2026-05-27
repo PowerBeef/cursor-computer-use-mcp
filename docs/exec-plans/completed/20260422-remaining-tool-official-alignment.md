@@ -1,3 +1,5 @@
+> **Status: Completed.** See `docs/histories/2026-04/20260422-1113-align-remaining-tool-defaults.md`.
+
 # Remaining Computer Use Tool Alignment
 
 ## 目标

@@ -1,3 +1,5 @@
+> **Status: Completed.** Shipped permission onboarding (`doctor`, `PermissionOnboardingApp`). See `docs/histories/` permission-related entries.
+
 # Permission Onboarding App
 
 ## 目标

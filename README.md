@@ -1,6 +1,26 @@
-# open-computer-use (Cursor fork)
+# Cursor Computer Use
 
-> **Cursor users:** See [docs/CURSOR.md](docs/CURSOR.md) for `install-cursor-mcp`, Composer workflow, and policy files. **macOS build requires macOS 26 (Tahoe)+** — see [docs/macOS-26.md](docs/macOS-26.md). This tree is rebased on [iFurySt/open-codex-computer-use](https://github.com/iFurySt/open-codex-computer-use); see [ATTRIBUTION.md](ATTRIBUTION.md).
+**MCP server for native macOS desktop automation in Cursor** — nine Codex-style tools over Accessibility and ScreenCaptureKit, without a Node wrapper.
+
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-CURSOR.md-green)](./docs/CURSOR.md)
+[![macOS 26+](https://img.shields.io/badge/macOS-26%2B%20(Tahoe)-lightgrey)](./docs/macOS-26.md)
+
+## What it is
+
+Cursor Computer Use connects Cursor to the macOS desktop through a local MCP server. Agents can list apps, read accessibility trees, click, type, scroll, and verify UI state using the same nine-tool surface as Codex Computer Use — implemented in Swift and exposed as `open-computer-use mcp`.
+
+- **Cursor-first:** `install-cursor-mcp`, Composer-tuned tool descriptions, optional policy files, and a dedicated skill pack
+- **Native runtime:** `OpenComputerUseKit` + **Open Computer Use.app** (not Terminal/Cursor) holds Accessibility and Screen Recording permissions
+- **No hybrid MCP:** one stdio server, nine tools — not a single bundled `computer` tool from legacy packages
+
+## Requirements
+
+- **macOS 26 (Tahoe) or later** for the native build in this repository
+- **Accessibility** and **Screen Recording** granted to **Open Computer Use.app**
+- **Cursor** with MCP enabled
+
+## Quick start
 
 ```bash
 npm run npm:build
@@ -8,161 +28,58 @@ open-computer-use install-cursor-mcp
 open-computer-use doctor
 ```
 
-Enable MCP server **`cursor-computer-use`** in Cursor (9 tools via `open-computer-use mcp`).
+1. In **Cursor → Settings → MCP**, enable **`cursor-computer-use`** (expect **9 tools**).
+2. Disable legacy **`computer-use-mcp`** if present (single `computer` tool).
+3. Optional: copy [`.cursor/computer-use-policy.example.json`](./.cursor/computer-use-policy.example.json) to `.cursor/computer-use-policy.json`.
 
----
+Full workflow and troubleshooting: **[docs/CURSOR.md](docs/CURSOR.md)**.
 
-# open-computer-use
+## Features
 
-[![English](https://img.shields.io/badge/English-Click-yellow)](./README.md)
-[![简体中文](https://img.shields.io/badge/简体中文-点击查看-orange)](./README.zh-CN.md)
-[![Release](https://img.shields.io/github/v/release/iFurySt/open-codex-computer-use)](https://github.com/iFurySt/open-codex-computer-use/releases)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/iFurySt/open-codex-computer-use)
-<a href="https://llmapis.com?source=https%3A%2F%2Fgithub.com%2FiFurySt%2Fopen-codex-computer-use" target="_blank"><img src="https://llmapis.com/api/badge/iFurySt/open-codex-computer-use" alt="LLMAPIS" width="20" /></a>
+| Area | Details |
+|------|---------|
+| MCP tools | `list_apps`, `get_app_state`, `click`, `perform_secondary_action`, `scroll`, `drag`, `type_text`, `press_key`, `set_value` |
+| Policy | Denylist for password managers and **Passwords**; optional allow/deny lists — see [docs/FORK.md](docs/FORK.md) |
+| macOS 26 | ScreenCaptureKit hardening and Tahoe permission notes — [docs/macOS-26.md](docs/macOS-26.md) |
+| Agent skill | [skills/cursor-computer-use/SKILL.md](skills/cursor-computer-use/SKILL.md) |
+| Plugin | [plugins/cursor-computer-use/](plugins/cursor-computer-use/) with `.mcp.json` |
+| Benchmarks | `npm run benchmark` — [docs/BENCHMARK.md](docs/BENCHMARK.md) |
 
-> [!TIP]
-> Interested in Browser Use? Check out [open-browser-use](https://github.com/iFurySt/open-codex-browser-use).
+## How it works
 
----
+```mermaid
+flowchart LR
+  Cursor[Cursor MCP client] -->|stdio JSON-RPC| CLI[open-computer-use mcp]
+  CLI --> App[Open Computer Use.app]
+  App --> AX[Accessibility + ScreenCaptureKit]
+  AX --> Desktop[macOS desktop UI]
+```
 
-`open-computer-use` is an open-source `Computer Use` service wrapped as `MCP`. Any AI agent or MCP client can use it to run Computer Use on macOS, Linux, and Windows.
+The CLI launches or talks to **Open Computer Use.app**, which performs automation under its own TCC identity. Responses include accessibility trees and optional screenshots for `element_index`-based actions.
 
-This project was inspired by OpenAI's [Codex Computer Use](https://openai.com/index/codex-for-almost-everything/). It showed that non-intrusive CUA can be built on top of Accessibility, so I decided to build an open-source version.
-
-I started this repo with my [harness template](https://github.com/iFurySt/harness-template), a template for quickly spinning up AI-first projects. It has been one of our most useful workflows lately, especially for nearly 100% AI-generated projects. I also wrote [a post](https://www.ifuryst.com/blog/2026/speedrunning-the-ai-era/) about the methodology behind it.
-
-## Demos
-
-### Codex App and Codex CLI
-
-[![Open Computer Use custom demo cover](./docs/generated/readme-assets/open-computer-use-demo-cover.png)](https://youtu.be/2s6aVpGiwaQ)
-
-<sub><em>`open-computer-use` used as Computer Use in Codex App and Codex CLI, matching the official experience.</em></sub>
-
-### Gemini CLI
-
-https://github.com/user-attachments/assets/eacb3b15-f939-46c7-b3b3-6f876977a58d
-
-<sub><em>Gemini CLI connects to `open-computer-use` through MCP and runs full Computer Use actions.</em></sub>
-
-### Linux
-
-https://github.com/user-attachments/assets/e036b1c8-2200-4896-abd4-19225915cf66
-
-<sub><em>`open-computer-use` running on Linux.</em></sub>
-
-## Quick Start
+## Build and test
 
 ```bash
-npm i -g open-computer-use
+swift build && swift test
+./scripts/run-tool-smoke-tests.sh
+BENCHMARK_TRIALS=1 npm run benchmark
 ```
 
-**On macOS, run it once and grant `Accessibility` and `Screen Recording`. Windows and Linux do not need this step.**
+## Documentation
 
-```bash
-open-computer-use
-```
+| Doc | Purpose |
+|-----|---------|
+| [docs/README.md](docs/README.md) | Full documentation map |
+| [docs/CURSOR.md](docs/CURSOR.md) | Install, permissions, Composer workflow |
+| [docs/macOS-26.md](docs/macOS-26.md) | Tahoe capture and permissions |
+| [AGENTS.md](AGENTS.md) | Agent navigation |
 
-Before using it, install it into your agent:
+## Other MCP clients
 
-```bash
-# Install into Codex by writing to ~/.codex/config.toml
-open-computer-use install-codex-mcp
-```
-
-Or add it to your own client manually:
-
-```json
-{
-  "mcpServers": {
-    "open-computer-use": {
-      "command": "open-computer-use",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-### Skill
-
-Install the skill directly:
-
-```bash
-# Install for Codex
-npx skills add iFurySt/open-codex-computer-use -g -a codex --skill open-computer-use -y
-npx skills ls -g -a codex | rg 'open-computer-use'
-```
-
-Install for Claude Code:
-
-```bash
-npx skills add iFurySt/open-codex-computer-use -g -a claude-code --skill open-computer-use -y
-```
-
-Update an existing global install, including the Codex install created above:
-
-```bash
-npx skills update open-computer-use -g -y
-```
-
-You can also manually download and install the
-[`open-computer-use` skill](./skills/open-computer-use).
-
-## More
-
-Besides the MCP JSON config above, you can also use the built-in commands:
-
-```bash
-# Install into Codex by writing to ~/.codex/config.toml
-open-computer-use install-codex-mcp
-
-# Install as a Codex plugin, mainly for Codex App
-open-computer-use install-codex-plugin
-
-# Install into Claude Code by writing to ~/.claude.json
-open-computer-use install-claude-mcp
-
-# Install into Gemini CLI for the current project by writing to ./.gemini/settings.json
-open-computer-use install-gemini-mcp
-
-# Install into Gemini CLI user config instead
-open-computer-use install-gemini-mcp --scope user
-
-# Install into opencode by writing to ~/.config/opencode/opencode.json (or the active config file)
-open-computer-use install-opencode-mcp
-
-# Call a single Computer Use tool and print the MCP-style JSON result
-open-computer-use call list_apps
-open-computer-use call get_app_state --args '{"app":"TextEdit"}'
-
-# Run a sequence in one process so element_index state can be reused
-# Sequence runs sleep 1s between successful operations by default
-open-computer-use call --calls '[{"tool":"get_app_state","args":{"app":"TextEdit"}},{"tool":"press_key","args":{"app":"TextEdit","key":"Return"}}]'
-open-computer-use call --calls-file examples/textedit-overlay-seq.json --sleep 0.5
-
-# Check permissions; onboarding only opens when something is missing
-open-computer-use doctor
-
-# Show help
-open-computer-use -h
-```
-
-## Cursor Motion
-
-Cursor Motion is an open-source cursor motion system for macOS, based on public information shared by members of the Software.Inc team. You can download the app from the [Releases page](https://github.com/iFurySt/open-codex-computer-use/releases).
-
-[![Cursor Motion custom demo cover](./docs/generated/readme-assets/cursor-motion-demo-cover.png)](https://youtu.be/KRUq5GUHv1Q)
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=iFurySt%2Fopen-codex-computer-use&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ifuryst/open-codex-computer-use&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ifuryst/open-codex-computer-use&type=date&legend=top-left" />
-    <img alt="Star History Chart for open-computer-use" src="https://api.star-history.com/chart?repos=ifuryst/open-codex-computer-use&type=date&legend=top-left" />
-  </picture>
-</a>
+Any client that supports local stdio MCP can run `open-computer-use mcp` with the same nine tools. Platform notes for Linux and Windows builds live in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License
 
 [MIT](./LICENSE)
+
+Derived work notice: [ATTRIBUTION.md](ATTRIBUTION.md)
