@@ -17,6 +17,8 @@ Install and workflow details live in **CURSOR.md** only; other files link there.
 
 Third-party notices: [../ATTRIBUTION.md](../ATTRIBUTION.md).
 
+To remove the GitHub **forked from domdomegg/computer-use-mcp** label, follow [DETACH_FORK.md](DETACH_FORK.md) (Settings → Leave fork network).
+
 ## Build and verify
 
 ```bash
