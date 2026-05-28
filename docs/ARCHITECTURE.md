@@ -44,14 +44,15 @@ This repository is a local `computer-use` project. The main line is a Swift macO
 - External transport is **stdio**; macOS CLI-to-app uses an extra Unix socket proxy so automation runs under the app bundle identity.
 - When `OPEN_COMPUTER_USE_VISUAL_CURSOR` is not disabled, `mcp` spins a minimal AppKit runtime (overlay on main thread, stdio server on a background thread).
 - Framing: one JSON-RPC message per line.
-- Methods: `initialize`, `notifications/initialized`, `notifications/turn-ended`, `ping`, `tools/list`, `tools/call`.
-- `notifications/turn-ended` clears the visual cursor overlay; CLI `open-computer-use turn-ended` can notify a running AppKit MCP process (Codex legacy hook).
+- Methods: `initialize`, `notifications/initialized`, `notifications/turn-ended`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/read`.
+- `get_app_state` returns tree text plus a screenshot MCP resource URI (`computer-use://screenshot/latest`) unless `inline_image: true`. PNGs include **Set-of-Mark** numbered boxes aligned with `element_index`.
+- `notifications/turn-ended` clears overlay state and in-process snapshot caches; CLI `open-computer-use turn-ended` notifies a running AppKit MCP process (see `.cursor/hooks/turn-ended.example.json`).
 
 ### 3. Tool service
 
 - `ComputerUseService` maps tool requests to local capabilities; `ComputerUseToolDispatcher` shares parsing between MCP and `open-computer-use call`.
 - `list_apps`: Spotlight metadata + `NSWorkspace` for running and recently used apps.
-- `get_app_state`: real AX/window capture when possible; requires non-minimized `AXWindow` and on-screen `CGWindow`. Best-effort unhide/activate before `cgWindowNotFound`. Fixture apps use synthetic state. Tree rendering compresses noise and deep Electron/WebView trees; open panels and Finder column views include visible file items.
+- `get_app_state`: real AX/window capture when possible; requires non-minimized `AXWindow` and on-screen `CGWindow`. Best-effort unhide/activate with AX visibility polling (not fixed sleeps). Fixture apps use synthetic state. Tree lines include window-relative `Frame:` segments; stable `id:…` hashes map across snapshots. Optional Apple Vision OCR merges canvas text. Off-screen nodes are pruned globally. Truncation footer reports dropped nodes/depth.
 - MCP `tools/list` descriptions/schemas align with official `computer-use` nine tools.
 - `open-computer-use call` supports single tools and `--calls` JSON arrays with shared in-process element index state; default 1s sleep between successful steps (`--sleep` override); stops on first `isError`.
 - Password-manager denylist via `AppSafetyPolicy` / `ComputerUsePolicy`; optional `.cursor/computer-use-policy.json` allow/deny lists (fork).

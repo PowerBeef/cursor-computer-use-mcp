@@ -18,6 +18,7 @@ npm install -g open-computer-use
 
 ```bash
 open-computer-use doctor
+open-computer-use doctor --cursor   # macOS 26, PATH, ~/.cursor/mcp.json preflight
 ```
 
 Grant **Accessibility** and **Screen Recording** to **Open Computer Use.app** (not Terminal/Cursor) when prompted.
@@ -43,7 +44,7 @@ cp .cursor/computer-use-policy.example.json .cursor/computer-use-policy.json
 ## Composer workflow
 
 1. `list_apps` — choose the target app.
-2. `get_app_state` — **once per assistant turn** before other actions; read `element_index` values from the accessibility tree.
+2. `get_app_state` — **once per assistant turn** before other actions; read `element_index` values from the accessibility tree (numbered **Set-of-Mark** boxes on the screenshot). Screenshots are exposed via MCP `resources/read` by default; pass `inline_image: true` to embed PNG in the tool result.
 3. Act with `click`, `set_value`, `type_text`, `scroll`, etc. Prefer **element_index** over coordinates.
 4. Call `get_app_state` again to verify when the UI may have changed.
 
@@ -54,6 +55,18 @@ After each assistant turn, hosts that support MCP may send `notifications/turn-e
 ```bash
 open-computer-use turn-ended
 ```
+
+Example Cursor hook (copy to `.cursor/hooks.json` or merge with your hooks config): see [`.cursor/hooks/turn-ended.example.json`](../.cursor/hooks/turn-ended.example.json).
+
+### `get_app_state` options
+
+| Parameter | Purpose |
+|-----------|---------|
+| `format` | `text` (default) or `yaml` compact tree |
+| `ocr` | Run Apple Vision OCR and merge text (default off; env `OPEN_COMPUTER_USE_OCR_DEFAULT=1`) |
+| `inline_image` | Embed PNG in tool result instead of MCP resource URI |
+
+Action tools accept `include_screenshot: true` when you need a fresh annotated PNG after a click/type; default is text-only for token efficiency.
 
 ## Cursor 3.5 agents
 
@@ -66,6 +79,7 @@ open-computer-use turn-ended
 |----------|---------|
 | `OPEN_COMPUTER_USE_MAX_TEXT_CHARS` | Truncate large text in MCP responses (default `24000`, suffix `[truncated]`) |
 | `OPEN_COMPUTER_USE_ALLOW_GLOBAL_POINTER_FALLBACKS` | Diagnostic physical-pointer fallback (macOS) |
+| `OPEN_COMPUTER_USE_OCR_DEFAULT` | When `1`/`true`, default `get_app_state` OCR to on |
 
 ## Skill pack
 

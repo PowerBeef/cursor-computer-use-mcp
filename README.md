@@ -73,7 +73,8 @@ The CLI talks to **Open Computer Use.app**, which holds TCC permissions and perf
 
 - **`install-cursor-mcp`** — wires MCP into Cursor (project or user scope)
 - **Policy** — optional allow/deny lists; password managers denied by default ([docs/FORK.md](docs/FORK.md))
-- **Skill + plugin** — [skills/cursor-computer-use/](skills/cursor-computer-use/SKILL.md), [plugins/cursor-computer-use/](plugins/cursor-computer-use/)
+- **Set-of-Mark screenshots** — numbered overlays on `get_app_state` PNGs; optional Apple Vision OCR
+- **Skill + plugin** — [skills/cursor-computer-use/](skills/cursor-computer-use/SKILL.md), [plugins/cursor-computer-use/](plugins/cursor-computer-use/) (`.cursor-plugin/plugin.json`)
 - **macOS 26 notes** — capture and permission hardening ([docs/macOS-26.md](docs/macOS-26.md))
 - **Benchmarks** — `npm run benchmark` ([docs/BENCHMARK.md](docs/BENCHMARK.md))
 

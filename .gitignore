@@ -4,8 +4,11 @@
 .swiftpm/
 dist/
 .gemini/
+artifacts/*
+!artifacts/README.md
 artifacts/codex-dumps/
 research/
 __pycache__/
 *.pyc
-benchmarks/results/
+benchmarks/results/*
+!benchmarks/results/sample-report.md

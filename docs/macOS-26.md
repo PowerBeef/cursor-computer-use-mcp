@@ -8,7 +8,14 @@ Grant **Accessibility** and **Screen Recording** to **Open Computer Use.app**, n
 
 ```bash
 open-computer-use doctor
+open-computer-use doctor --cursor
 ```
+
+## Vision (OCR + presentation)
+
+- **Set-of-Mark**: annotated PNG overlays use each indexed control's window-relative frame.
+- **Apple Vision OCR** (`VNRecognizeTextRequest`): opt-in via `get_app_state` `ocr: true` or `OPEN_COMPUTER_USE_OCR_DEFAULT=1`.
+- **Attributed text**: web areas and text fields may expose `AXAttributedStringForTextMarkerRange` excerpts when plain `AXValue` is empty.
 
 If permissions look granted but capture still fails, quit and reopen the app that launched MCP, then rerun `doctor`.
 
