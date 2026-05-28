@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "event": "turnEnded",
+      "command": ["open-computer-use", "turn-ended"]
+    }
+  ]
+}

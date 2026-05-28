@@ -295,6 +295,50 @@ function installCursorMcp(configPath, serverName, commandName) {
   } else {
     process.stdout.write(`Installed Cursor MCP server "${serverName}" into ${configPath}.\n`);
   }
+
+  printCursorPostInstallChecklist(configPath, mcpServers);
+}
+
+function printCursorPostInstallChecklist(configPath, mcpServers) {
+  const warnings = [];
+  if (mcpServers["computer-use-mcp"] != null) {
+    warnings.push(
+      "Disable legacy server computer-use-mcp (single computer tool). Enable only cursor-computer-use (9 tools).",
+    );
+  }
+
+  const computerUseKeys = Object.keys(mcpServers).filter(
+    (key) => key.includes("computer-use") || key.includes("computer_use"),
+  );
+  if (computerUseKeys.length > 1) {
+    warnings.push(`Multiple Computer Use MCP servers in ${configPath}: ${computerUseKeys.join(", ")}`);
+  }
+
+  process.stdout.write(`
+Post-install checklist:
+  1. Cursor → Settings → MCP → enable "${serverName}" (9 tools: list_apps, get_app_state, click, …)
+  2. Run: open-computer-use doctor --cursor
+  3. Grant Accessibility + Screen Recording to Open Computer Use.app (not Terminal/Cursor)
+  4. Disable legacy computer-use-mcp if still listed
+  5. Optional policy: cp .cursor/computer-use-policy.example.json .cursor/computer-use-policy.json
+`);
+
+  if (warnings.length > 0) {
+    process.stdout.write(`Warnings:\n${warnings.map((line) => `  - ${line}`).join("\n")}\n`);
+  }
+
+  try {
+    const which = require("node:child_process").execFileSync("/usr/bin/which", ["open-computer-use"], {
+      encoding: "utf8",
+    }).trim();
+    if (which) {
+      process.stdout.write(`PATH: open-computer-use → ${which}\n`);
+    }
+  } catch {
+    process.stdout.write(
+      "PATH: open-computer-use not found (required for Cursor Automations). Install via npm run npm:build or npm install -g open-computer-use.\n",
+    );
+  }
 }
 
 function installGeminiMcp(configPath, serverName, commandName) {

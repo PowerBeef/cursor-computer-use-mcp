@@ -59,3 +59,6 @@ esac
 config_path="${CURSOR_MCP_CONFIG_PATH:-${default_config_path}}"
 
 node "${config_helper}" cursor-mcp "${config_path}" "${server_name}" "${command_name}"
+
+echo ""
+echo "Next: open-computer-use doctor --cursor"

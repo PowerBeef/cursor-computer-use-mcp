@@ -570,6 +570,6 @@ enum AppSafetyPolicy {
     }
 
     static func permissionDenied(bundleIdentifier: String) -> ComputerUseError {
-        .permissionDenied("Computer Use is not allowed to use the app '\(bundleIdentifier)' for safety reasons.")
+        ComputerUsePolicy.permissionDenied(reference: bundleIdentifier, reason: .passwordManager)
     }
 }

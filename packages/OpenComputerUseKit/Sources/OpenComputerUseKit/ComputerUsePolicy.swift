@@ -70,19 +70,86 @@ enum ComputerUsePolicy {
         return false
     }
 
-    static func permissionDenied(reference: String) -> ComputerUseError {
-        .permissionDenied("Computer Use is not allowed to use '\(reference)' by cursor computer-use policy.")
+    static func permissionDenied(reference: String, reason: PolicyDenialReason = .general) -> ComputerUseError {
+        let paths = policyPaths().map(\.path).joined(separator: " or ")
+        let hint: String
+        switch reason {
+        case .passwordManager:
+            hint = "Password managers and com.apple.Passwords are denied by default (denyPasswordManagers)."
+        case .allowList:
+            hint = "Only apps listed in allowApps are permitted."
+        case .denyBundle:
+            hint = "The bundle ID is listed in denyBundleIds."
+        case .general:
+            hint = "Edit policy allow/deny rules."
+        }
+        return .permissionDenied(
+            "Computer Use blocked '\(reference)' by cursor computer-use policy (\(hint)). Configure: \(paths.isEmpty ? "~/.cursor/computer-use-policy.json" : paths)."
+        )
+    }
+
+    enum PolicyDenialReason {
+        case general
+        case passwordManager
+        case allowList
+        case denyBundle
     }
 
     static func assertAccess(query: String, bundleIdentifier: String?, appName: String) throws {
         let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if isBlocked(query: normalized) {
-            throw permissionDenied(reference: bundleIdentifier ?? normalized)
+        if let reason = denialReason(query: normalized) {
+            throw permissionDenied(reference: bundleIdentifier ?? normalized, reason: reason)
         }
 
-        if isBlocked(bundleIdentifier: bundleIdentifier, appName: appName) {
-            throw permissionDenied(reference: bundleIdentifier ?? appName)
+        if let reason = denialReason(bundleIdentifier: bundleIdentifier, appName: appName) {
+            throw permissionDenied(reference: bundleIdentifier ?? appName, reason: reason)
         }
+    }
+
+    private static func denialReason(query: String) -> PolicyDenialReason? {
+        let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return nil }
+        let policy = loadPolicy()
+        if policy.denyPasswordManagers, AppSafetyPolicy.isBlocked(bundleIdentifier: normalized) {
+            return .passwordManager
+        }
+        if policy.denyBundleIds.contains(normalized.lowercased()) {
+            return .denyBundle
+        }
+        if !policy.allowApps.isEmpty,
+           !isAllowedByAllowList(
+               query: normalized,
+               bundleIdentifier: isBundleIdentifierQuery(normalized) ? normalized : nil,
+               appName: isBundleIdentifierQuery(normalized) ? nil : normalized,
+               allowApps: policy.allowApps
+           )
+        {
+            return .allowList
+        }
+        return nil
+    }
+
+    private static func denialReason(bundleIdentifier: String?, appName: String?) -> PolicyDenialReason? {
+        let policy = loadPolicy()
+        let bundle = bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let name = appName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if policy.denyPasswordManagers, AppSafetyPolicy.isBlocked(bundleIdentifier: bundleIdentifier) {
+            return .passwordManager
+        }
+        if !bundle.isEmpty, policy.denyBundleIds.contains(bundle.lowercased()) {
+            return .denyBundle
+        }
+        if !policy.allowApps.isEmpty,
+           !isAllowedByAllowList(
+               query: nil,
+               bundleIdentifier: bundle.isEmpty ? nil : bundle,
+               appName: name.isEmpty ? nil : name,
+               allowApps: policy.allowApps
+           )
+        {
+            return .allowList
+        }
+        return nil
     }
 
     private static func loadPolicy() -> LoadedPolicy {

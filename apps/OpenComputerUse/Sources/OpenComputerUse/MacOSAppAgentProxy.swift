@@ -371,14 +371,19 @@ private final class AppAgentConnection: @unchecked Sendable {
                 }
                 return CLIProxyResponse(stdout: "", stderr: "", exitCode: EXIT_SUCCESS)
 
-            case .doctor:
-                let permissions = PermissionDiagnostics.current()
-                if !permissions.missingPermissions.isEmpty {
+            case let .doctor(cursor):
+                let stdout: String
+                if cursor {
+                    stdout = CursorDoctorDiagnostics.run(cursorMode: true).summary
+                } else {
+                    stdout = PermissionDiagnostics.current().summary
+                }
+                if !PermissionDiagnostics.current().missingPermissions.isEmpty {
                     Task { @MainActor in
                         PermissionOnboardingApp.present()
                     }
                 }
-                return CLIProxyResponse(stdout: permissions.summary + "\n", stderr: "", exitCode: EXIT_SUCCESS)
+                return CLIProxyResponse(stdout: stdout + "\n", stderr: "", exitCode: EXIT_SUCCESS)
 
             case .listApps:
                 let service = ComputerUseService()

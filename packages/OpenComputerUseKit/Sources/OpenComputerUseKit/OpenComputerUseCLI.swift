@@ -3,7 +3,7 @@ import Foundation
 public enum OpenComputerUseCLICommand: Equatable {
     case launchOnboarding
     case mcp
-    case doctor
+    case doctor(cursor: Bool)
     case listApps
     case snapshot(app: String)
     case call(OpenComputerUseCallInvocation)
@@ -77,7 +77,7 @@ public func parseOpenComputerUseCLI(arguments: [String]) throws -> OpenComputerU
     case "mcp":
         return try parseSimpleCommand(name: "mcp", arguments: Array(arguments.dropFirst()), result: .mcp)
     case "doctor":
-        return try parseSimpleCommand(name: "doctor", arguments: Array(arguments.dropFirst()), result: .doctor)
+        return try parseDoctor(arguments: Array(arguments.dropFirst()))
     case "list-apps":
         return try parseSimpleCommand(name: "list-apps", arguments: Array(arguments.dropFirst()), result: .listApps)
     case "call":
@@ -133,9 +133,10 @@ public func openComputerUseHelpText(command: String? = nil) -> String {
     case "doctor":
         return """
         Usage:
-          open-computer-use doctor
+          open-computer-use doctor [--cursor]
 
         Print the current Accessibility and Screen Recording permission state.
+        --cursor adds macOS 26, PATH, and ~/.cursor/mcp.json preflight for Cursor.
         If permissions are missing, this also launches the onboarding app.
         """
     case "list-apps":
@@ -205,6 +206,24 @@ public func openComputerUseHelpText(command: String? = nil) -> String {
         \(openComputerUseHelpText())
         """
     }
+}
+
+private func parseDoctor(arguments: [String]) throws -> OpenComputerUseCLICommand {
+    if arguments.count == 1, let option = arguments.first, option == "-h" || option == "--help" {
+        return .help(command: "doctor")
+    }
+
+    var cursor = false
+    for argument in arguments {
+        switch argument {
+        case "--cursor":
+            cursor = true
+        default:
+            throw OpenComputerUseCLIError(message: "doctor accepts only --cursor", helpCommand: "doctor")
+        }
+    }
+
+    return .doctor(cursor: cursor)
 }
 
 private func parseSimpleCommand(
