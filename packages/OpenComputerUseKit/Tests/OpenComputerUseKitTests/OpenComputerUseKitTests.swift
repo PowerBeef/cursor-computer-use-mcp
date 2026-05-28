@@ -15,6 +15,8 @@ final class OpenComputerUseKitTests: XCTestCase {
         XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["help", "snapshot"]), .help(command: "snapshot"))
         XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["snapshot", "--help"]), .help(command: "snapshot"))
         XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["doctor", "-h"]), .help(command: "doctor"))
+        XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["doctor", "--cursor"]), .doctor(cursor: true))
+        XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["doctor"]), .doctor(cursor: false))
         XCTAssertEqual(try parseOpenComputerUseCLI(arguments: ["call", "--help"]), .help(command: "call"))
     }
 
@@ -231,7 +233,7 @@ final class OpenComputerUseKitTests: XCTestCase {
     func testMacOSAppAgentProxyDecisionRoutesAutomationCommandsThroughAppBundle() {
         for command in [
             OpenComputerUseCLICommand.mcp,
-            .doctor,
+            .doctor(cursor: false),
             .listApps,
             .snapshot(app: "TextEdit"),
             .call(.single(toolName: "list_apps", argumentsJSON: nil, argumentsFile: nil)),
@@ -277,13 +279,13 @@ final class OpenComputerUseKitTests: XCTestCase {
 
     func testMacOSAppAgentProxyDecisionHonorsDisableAndMissingBundle() {
         XCTAssertFalse(shouldUseMacOSAppAgentProxy(
-            command: .doctor,
+            command: .doctor(cursor: false),
             proxyDisabled: true,
             appBundleAvailable: true,
             runningFromLaunchServicesAppInstance: false
         ))
         XCTAssertFalse(shouldUseMacOSAppAgentProxy(
-            command: .doctor,
+            command: .doctor(cursor: false),
             proxyDisabled: false,
             appBundleAvailable: false,
             runningFromLaunchServicesAppInstance: false
@@ -494,6 +496,47 @@ final class OpenComputerUseKitTests: XCTestCase {
         XCTAssertNil(response)
     }
 
+    func testMCPResourcesListExposesLatestScreenshotURI() throws {
+        _ = MCPScreenshotResourceStore.shared.store(pngData: Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
+        let server = StdioMCPServer()
+        let response = try XCTUnwrap(
+            server.handle(line: #"{"jsonrpc":"2.0","id":3,"method":"resources/list","params":{}}"#)
+        )
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let result = try XCTUnwrap(payload["result"] as? [String: Any])
+        let resources = try XCTUnwrap(result["resources"] as? [[String: Any]])
+        XCTAssertTrue(resources.contains { ($0["uri"] as? String)?.hasPrefix("computer-use://screenshot/") == true })
+    }
+
+    func testSetOfMarkAnnotateEmbedsNumberedOverlay() throws {
+        let size = NSSize(width: 120, height: 80)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(origin: .zero, size: size).fill()
+        image.unlockFocus()
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:])
+        else {
+            XCTFail("failed to build fixture png")
+            return
+        }
+
+        let record = ElementRecord(
+            index: 3,
+            stableID: "id:test",
+            identifier: nil,
+            element: nil,
+            localFrame: CGRect(x: 10, y: 10, width: 40, height: 20),
+            rawActions: [],
+            prettyActions: []
+        )
+
+        let annotated = try XCTUnwrap(SetOfMarkRenderer.annotate(pngData: png, records: [3: record]))
+        XCTAssertGreaterThan(annotated.count, png.count)
+    }
+
     func testWindowRelativeFrameUsesSharedGlobalCoordinates() {
         let window = CGRect(x: 1486, y: 556, width: 919, height: 644)
         let child = CGRect(x: 1486, y: 556, width: 919, height: 644)
@@ -507,8 +550,12 @@ final class OpenComputerUseKitTests: XCTestCase {
     func testToolDescriptionsMatchOfficialComputerUseSurface() {
         let tools = Dictionary(uniqueKeysWithValues: ToolDefinitions.all.map { ($0.name, $0) })
 
-        XCTAssertTrue(tools["get_app_state"]?.description.hasPrefix("Workflow: list_apps") == true)
-        XCTAssertTrue(tools["get_app_state"]?.description.contains("get_app_state") == true)
+        XCTAssertTrue(tools["get_app_state"]?.description.contains("Set-of-Mark") == true)
+        XCTAssertTrue(tools["get_app_state"]?.description.contains("accessibility tree") == true)
+        XCTAssertTrue(
+            ((tools["get_app_state"]?.inputSchema["properties"] as? [String: [String: Any]])?["format"]?["enum"] as? [String])?
+                .contains("yaml") == true
+        )
         XCTAssertFalse(tools["get_app_state"]?.description.contains("plugin `Computer Use`") == true)
         XCTAssertTrue(tools["press_key"]?.description.contains("xdotool") == true)
         XCTAssertEqual(
@@ -1725,11 +1772,14 @@ final class OpenComputerUseKitTests: XCTestCase {
             targetWindowID: nil,
             targetWindowLayer: nil,
             screenshotPNGData: nil,
+            screenshotMetadata: nil,
             mode: .accessibility,
             treeLines: treeLines,
+            identifierIndexLines: [],
             focusedSummary: focusedSummary,
             focusedElement: nil,
             selectedText: selectedText,
+            truncationFooter: nil,
             elements: [:]
         )
     }

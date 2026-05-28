@@ -8,11 +8,19 @@ public final class ComputerUseToolDispatcher {
     }
 
     public func callTool(name: String, arguments: [String: Any]) throws -> ToolCallResult {
+        let includeScreenshot = optionalBool("include_screenshot", in: arguments) ?? false
+
         switch name {
         case "list_apps":
             return service.listApps()
         case "get_app_state":
-            return try service.getAppState(app: requireString("app", in: arguments))
+            let format = SnapshotOutputFormat(rawValue: optionalString("format", in: arguments) ?? "text") ?? .text
+            return try service.getAppState(
+                app: requireString("app", in: arguments),
+                format: format,
+                includeOCR: optionalBool("ocr", in: arguments),
+                inlineImage: optionalBool("inline_image", in: arguments) ?? false
+            )
         case "click":
             return try service.click(
                 app: requireString("app", in: arguments),
@@ -20,20 +28,23 @@ public final class ComputerUseToolDispatcher {
                 x: optionalDouble("x", in: arguments),
                 y: optionalDouble("y", in: arguments),
                 clickCount: Int(optionalDouble("click_count", in: arguments) ?? 1),
-                mouseButton: optionalString("mouse_button", in: arguments) ?? "left"
+                mouseButton: optionalString("mouse_button", in: arguments) ?? "left",
+                includeScreenshot: includeScreenshot
             )
         case "perform_secondary_action":
             return try service.performSecondaryAction(
                 app: requireString("app", in: arguments),
                 elementIndex: requireString("element_index", in: arguments),
-                action: requireString("action", in: arguments)
+                action: requireString("action", in: arguments),
+                includeScreenshot: includeScreenshot
             )
         case "scroll":
             return try service.scroll(
                 app: requireString("app", in: arguments),
                 direction: requireString("direction", in: arguments),
                 elementIndex: requireString("element_index", in: arguments),
-                pages: optionalDouble("pages", in: arguments) ?? 1
+                pages: optionalDouble("pages", in: arguments) ?? 1,
+                includeScreenshot: includeScreenshot
             )
         case "drag":
             return try service.drag(
@@ -41,23 +52,27 @@ public final class ComputerUseToolDispatcher {
                 fromX: requireDouble("from_x", in: arguments),
                 fromY: requireDouble("from_y", in: arguments),
                 toX: requireDouble("to_x", in: arguments),
-                toY: requireDouble("to_y", in: arguments)
+                toY: requireDouble("to_y", in: arguments),
+                includeScreenshot: includeScreenshot
             )
         case "type_text":
             return try service.typeText(
                 app: requireString("app", in: arguments),
-                text: requireString("text", in: arguments)
+                text: requireString("text", in: arguments),
+                includeScreenshot: includeScreenshot
             )
         case "press_key":
             return try service.pressKey(
                 app: requireString("app", in: arguments),
-                key: requireString("key", in: arguments)
+                key: requireString("key", in: arguments),
+                includeScreenshot: includeScreenshot
             )
         case "set_value":
             return try service.setValue(
                 app: requireString("app", in: arguments),
                 elementIndex: requireString("element_index", in: arguments),
-                value: requireString("value", in: arguments)
+                value: requireString("value", in: arguments),
+                includeScreenshot: includeScreenshot
             )
         default:
             throw ComputerUseError.unsupportedTool(name)
@@ -111,6 +126,16 @@ public final class ComputerUseToolDispatcher {
             return number.doubleValue
         }
 
+        return nil
+    }
+
+    private func optionalBool(_ key: String, in arguments: [String: Any]) -> Bool? {
+        if let value = arguments[key] as? Bool {
+            return value
+        }
+        if let number = arguments[key] as? NSNumber {
+            return number.boolValue
+        }
         return nil
     }
 }

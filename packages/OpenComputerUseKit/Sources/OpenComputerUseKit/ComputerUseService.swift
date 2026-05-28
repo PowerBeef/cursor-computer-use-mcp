@@ -352,6 +352,10 @@ public final class ComputerUseService {
 
     public init() {}
 
+    public func resetCachedSnapshots() {
+        snapshotsByApp.removeAll()
+    }
+
     public func listApps() -> ToolCallResult {
         MCPTextTruncation.truncate(
             ToolCallResult.text(
@@ -362,11 +366,31 @@ public final class ComputerUseService {
         )
     }
 
-    public func getAppState(app query: String) throws -> ToolCallResult {
-        snapshotResult(for: try refreshSnapshot(for: query), style: .fullState)
+    public func getAppState(
+        app query: String,
+        format: SnapshotOutputFormat = .text,
+        includeOCR: Bool? = nil,
+        inlineImage: Bool = false
+    ) throws -> ToolCallResult {
+        let ocrEnabled = includeOCR ?? OCRPipeline.defaultEnabled()
+        return snapshotResult(
+            for: try refreshSnapshot(for: query, captureScreenshot: true, includeOCR: ocrEnabled),
+            style: .fullState,
+            format: format,
+            includeScreenshot: true,
+            inlineImage: inlineImage
+        )
     }
 
-    public func click(app query: String, elementIndex: String?, x: Double?, y: Double?, clickCount: Int, mouseButton: String) throws -> ToolCallResult {
+    public func click(
+        app query: String,
+        elementIndex: String?,
+        x: Double?,
+        y: Double?,
+        clickCount: Int,
+        mouseButton: String,
+        includeScreenshot: Bool = false
+    ) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         let button = MouseButtonKind(rawValue: mouseButton.lowercased()) ?? .left
         if snapshot.mode == .fixture {
@@ -390,7 +414,7 @@ public final class ComputerUseService {
 
             Thread.sleep(forTimeInterval: 0.15)
             pulseVisualCursor(at: cursorTarget, clickCount: clickCount, mouseButton: button)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         if let elementIndex {
@@ -477,10 +501,15 @@ public final class ComputerUseService {
             throw ComputerUseError.invalidArguments("click requires either element_index or x/y")
         }
 
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func performSecondaryAction(app query: String, elementIndex: String, action: String) throws -> ToolCallResult {
+    public func performSecondaryAction(
+        app query: String,
+        elementIndex: String,
+        action: String,
+        includeScreenshot: Bool = false
+    ) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         let record = try lookupElement(snapshot: snapshot, index: elementIndex)
 
@@ -489,7 +518,7 @@ public final class ComputerUseService {
                 throw ComputerUseError.message(invalidSecondaryActionMessage(action: action, record: record))
             }
 
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         guard let rawAction = matchingAction(requested: action, record: record) else {
@@ -506,10 +535,16 @@ public final class ComputerUseService {
         }
 
         Thread.sleep(forTimeInterval: 0.15)
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func scroll(app query: String, direction: String, elementIndex: String, pages: Double) throws -> ToolCallResult {
+    public func scroll(
+        app query: String,
+        direction: String,
+        elementIndex: String,
+        pages: Double,
+        includeScreenshot: Bool = false
+    ) throws -> ToolCallResult {
         let normalized = direction.lowercased()
         guard ["up", "down", "left", "right"].contains(normalized) else {
             throw ComputerUseError.message("Invalid scroll direction: \(direction)")
@@ -527,7 +562,7 @@ public final class ComputerUseService {
             }
             try FixtureBridge.post(FixtureCommand(kind: "scroll", identifier: identifier, direction: normalized, pages: pages))
             Thread.sleep(forTimeInterval: 0.15)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         if let repeatCount = integralScrollPageCount(pages),
@@ -549,15 +584,22 @@ public final class ComputerUseService {
             throw ComputerUseError.stateUnavailable("element \(elementIndex) has no scrollable frame")
         }
 
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func drag(app query: String, fromX: Double, fromY: Double, toX: Double, toY: Double) throws -> ToolCallResult {
+    public func drag(
+        app query: String,
+        fromX: Double,
+        fromY: Double,
+        toX: Double,
+        toY: Double,
+        includeScreenshot: Bool = false
+    ) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         if snapshot.mode == .fixture {
             try FixtureBridge.post(FixtureCommand(kind: "drag", identifier: "fixture-drag-pad", x: fromX, y: fromY, toX: toX, toY: toY))
             Thread.sleep(forTimeInterval: 0.15)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         let start = try screenshotToGlobalPoint(snapshot: snapshot, x: fromX, y: fromY)
@@ -568,20 +610,20 @@ public final class ComputerUseService {
             targetDescription: "from=(\(Int(fromX)), \(Int(fromY))) to=(\(Int(toX)), \(Int(toY)))",
             snapshot: snapshot
         )
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func typeText(app query: String, text: String) throws -> ToolCallResult {
+    public func typeText(app query: String, text: String, includeScreenshot: Bool = false) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         if snapshot.mode == .fixture {
             try FixtureBridge.post(FixtureCommand(kind: "type_text", identifier: "fixture-input", value: text))
             Thread.sleep(forTimeInterval: 0.15)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         if try typeTextBySettingFocusedValueIfAvailable(text, in: snapshot) {
             Thread.sleep(forTimeInterval: 0.1)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         guard try canTypeTextUsingKeyboardFallback(in: snapshot) else {
@@ -589,22 +631,27 @@ public final class ComputerUseService {
         }
 
         try InputSimulation.typeText(text, pid: snapshot.app.pid)
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func pressKey(app query: String, key: String) throws -> ToolCallResult {
+    public func pressKey(app query: String, key: String, includeScreenshot: Bool = false) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         if snapshot.mode == .fixture {
             try FixtureBridge.post(FixtureCommand(kind: "press_key", identifier: "fixture-key-capture", value: key))
             Thread.sleep(forTimeInterval: 0.15)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         try InputSimulation.pressKey(key, pid: snapshot.app.pid)
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
-    public func setValue(app query: String, elementIndex: String, value: String) throws -> ToolCallResult {
+    public func setValue(
+        app query: String,
+        elementIndex: String,
+        value: String,
+        includeScreenshot: Bool = false
+    ) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
         let record = try lookupElement(snapshot: snapshot, index: elementIndex)
 
@@ -618,7 +665,7 @@ public final class ComputerUseService {
             try FixtureBridge.post(FixtureCommand(kind: "set_value", identifier: identifier, value: value))
             Thread.sleep(forTimeInterval: 0.15)
             settleVisualCursor(at: cursorTarget)
-            return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+            return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
         guard let element = record.element else {
@@ -645,7 +692,7 @@ public final class ComputerUseService {
         }
 
         settleVisualCursor(at: cursorTarget)
-        return snapshotResult(for: try refreshSnapshot(for: query), style: .actionResult)
+        return try actionResult(for: query, includeScreenshot: includeScreenshot)
     }
 
     private func currentSnapshot(for query: String) throws -> AppSnapshot {
@@ -657,9 +704,17 @@ public final class ComputerUseService {
     }
 
     @discardableResult
-    private func refreshSnapshot(for query: String) throws -> AppSnapshot {
+    private func refreshSnapshot(
+        for query: String,
+        captureScreenshot: Bool = true,
+        includeOCR: Bool = OCRPipeline.defaultEnabled()
+    ) throws -> AppSnapshot {
         let app = try AppDiscovery.resolve(query)
-        let snapshot = try SnapshotBuilder.build(for: app)
+        let snapshot = try SnapshotBuilder.build(
+            for: app,
+            captureScreenshot: captureScreenshot,
+            includeOCR: includeOCR
+        )
 
         let keys = Set([
             query.lowercased(),
@@ -675,11 +730,28 @@ public final class ComputerUseService {
     }
 
     private func lookupElement(snapshot: AppSnapshot, index: String) throws -> ElementRecord {
-        guard let parsedIndex = Int(index), let record = snapshot.elements[parsedIndex] else {
-            throw ComputerUseError.invalidArguments("unknown element_index '\(index)'")
+        let trimmed = index.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("id:"),
+           let record = snapshot.elements.values.first(where: { $0.stableID == trimmed })
+        {
+            return record
+        }
+
+        guard let parsedIndex = Int(trimmed), let record = snapshot.elements[parsedIndex] else {
+            throw ComputerUseError.invalidArguments(
+                "unknown element_index '\(index)'. Use the numeric prefix from get_app_state (e.g. \"14\") or stable_id (e.g. \"id:abc123\")."
+            )
         }
 
         return record
+    }
+
+    private func actionResult(for query: String, includeScreenshot: Bool) throws -> ToolCallResult {
+        snapshotResult(
+            for: try refreshSnapshot(for: query, captureScreenshot: includeScreenshot, includeOCR: false),
+            style: .actionResult,
+            includeScreenshot: includeScreenshot
+        )
     }
 
     private func matchingAction(requested: String, record: ElementRecord) -> String? {
@@ -988,6 +1060,7 @@ public final class ComputerUseService {
         let rawActions = copyActions(for: hitElement) ?? []
         return ElementRecord(
             index: -1,
+            stableID: "ephemeral",
             identifier: nil,
             element: hitElement,
             localFrame: localFrame(of: hitElement, windowBounds: snapshot.windowBounds),
@@ -1075,6 +1148,7 @@ public final class ComputerUseService {
             results.append(
                 ElementRecord(
                     index: -1,
+                    stableID: "ephemeral",
                     identifier: nil,
                     element: child,
                     localFrame: localFrame(of: child, windowBounds: windowBounds),
@@ -1147,6 +1221,7 @@ public final class ComputerUseService {
             let rawActions = copyActions(for: parent) ?? []
             let candidate = ElementRecord(
                 index: -1,
+                stableID: "ephemeral",
                 identifier: nil,
                 element: parent,
                 localFrame: localFrame(of: parent, windowBounds: snapshot.windowBounds),
@@ -1683,10 +1758,25 @@ public final class ComputerUseService {
         }
     }
 
-    private func snapshotResult(for snapshot: AppSnapshot, style: SnapshotTextStyle) -> ToolCallResult {
-        var content = [ToolResultContentItem.text(snapshot.renderedText(style: style))]
-        if let screenshotPNGData = snapshot.screenshotPNGData {
-            content.append(.pngImage(screenshotPNGData))
+    private func snapshotResult(
+        for snapshot: AppSnapshot,
+        style: SnapshotTextStyle,
+        format: SnapshotOutputFormat = .text,
+        includeScreenshot: Bool = true,
+        inlineImage: Bool = false
+    ) -> ToolCallResult {
+        var content = [ToolResultContentItem.text(snapshot.renderedText(style: style, format: format))]
+        if includeScreenshot, let screenshotPNGData = snapshot.screenshotPNGData {
+            if inlineImage {
+                content.append(.pngImage(screenshotPNGData))
+            } else {
+                let uri = MCPScreenshotResourceStore.shared.store(pngData: screenshotPNGData)
+                content.append(
+                    ToolResultContentItem.text(
+                        "Screenshot resource: \(uri) (use resources/read for inline PNG, or pass inline_image=true on get_app_state)."
+                    )
+                )
+            }
         }
         return MCPTextTruncation.truncate(ToolCallResult(content: content))
     }

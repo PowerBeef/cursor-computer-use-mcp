@@ -6,6 +6,7 @@ import ScreenCaptureKit
 
 final class ElementRecord {
     let index: Int
+    let stableID: String
     let identifier: String?
     let element: AXUIElement?
     let localFrame: CGRect?
@@ -15,6 +16,7 @@ final class ElementRecord {
 
     init(
         index: Int,
+        stableID: String,
         identifier: String?,
         element: AXUIElement?,
         localFrame: CGRect?,
@@ -23,6 +25,7 @@ final class ElementRecord {
         isSyntheticText: Bool = false
     ) {
         self.index = index
+        self.stableID = stableID
         self.identifier = identifier
         self.element = element
         self.localFrame = localFrame
@@ -43,7 +46,8 @@ let screenshotCaptureTimeout: TimeInterval = 5
 let screenshotResultMaxPNGBytes = 900_000
 let screenshotResultMaxDimension: CGFloat = 1280
 let screenshotResultMinScale: CGFloat = 0.25
-private let windowVisibilityRecoveryDelay: TimeInterval = 0.7
+private let windowVisibilityRecoveryTimeout: TimeInterval = 0.7
+private let windowVisibilityRecoveryPollInterval: TimeInterval = 0.05
 private let axWebAreaRole = "AXWebArea"
 private let axContentsAttribute = "AXContents"
 private let axVisibleChildrenAttribute = "AXVisibleChildren"
@@ -55,26 +59,48 @@ public struct AppSnapshot {
     let targetWindowID: CGWindowID?
     let targetWindowLayer: Int?
     public let screenshotPNGData: Data?
+    let screenshotMetadata: ScreenshotPresentationMetadata?
     let mode: SnapshotMode
     let treeLines: [String]
+    let identifierIndexLines: [String]
     let focusedSummary: String?
     let focusedElement: AXUIElement?
     let selectedText: String?
+    let truncationFooter: String?
 
     let elements: [Int: ElementRecord]
 
     public var renderedText: String {
-        renderedText(style: .fullState)
+        renderedText(style: .fullState, format: .text)
     }
 
-    public func renderedText(style: SnapshotTextStyle) -> String {
+    public func renderedText(style: SnapshotTextStyle, format: SnapshotOutputFormat = .text) -> String {
         var lines: [String] = []
         let displayTitle = displayWindowTitle(windowTitle, appName: app.name)
         let appReference = app.bundleIdentifier ?? app.name
 
         lines.append("App=\(appReference) (pid \(app.pid))")
         lines.append("Window: \(quoted(displayTitle)), App: \(app.name).")
-        lines.append(contentsOf: treeLines)
+        if let screenshotMetadata {
+            lines.append(screenshotMetadata.headerLine)
+        }
+
+        switch format {
+        case .text:
+            lines.append(contentsOf: treeLines)
+            if !identifierIndexLines.isEmpty {
+                lines.append("")
+                lines.append("Stable element IDs (use element_index or stable_id):")
+                lines.append(contentsOf: identifierIndexLines)
+            }
+        case .yaml:
+            lines.append(SnapshotTreeYAML.render(records: elements, lines: treeLines))
+        }
+
+        if let truncationFooter {
+            lines.append("")
+            lines.append(truncationFooter)
+        }
 
         if let selectedText, !selectedText.isEmpty {
             lines.append("")
@@ -94,7 +120,11 @@ public enum SnapshotTextStyle {
 }
 
 enum SnapshotBuilder {
-    static func build(for app: RunningAppDescriptor) throws -> AppSnapshot {
+    static func build(
+        for app: RunningAppDescriptor,
+        captureScreenshot: Bool = true,
+        includeOCR: Bool = OCRPipeline.defaultEnabled()
+    ) throws -> AppSnapshot {
         if app.name == FixtureBridge.appName, let fixtureState = try FixtureBridge.readState() {
             return buildFixtureSnapshot(app: app, state: fixtureState)
         }
@@ -142,7 +172,9 @@ enum SnapshotBuilder {
             windowTitle: windowTitle,
             windowCapture: windowCapture,
             focusedApplication: focusedApplication,
-            systemWide: systemWide
+            systemWide: systemWide,
+            captureScreenshot: captureScreenshot,
+            includeOCR: includeOCR
         )
     }
 
@@ -153,21 +185,33 @@ enum SnapshotBuilder {
         windowTitle: String?,
         windowCapture: WindowCapture,
         focusedApplication: AXUIElement?,
-        systemWide: AXUIElement
+        systemWide: AXUIElement,
+        captureScreenshot: Bool,
+        includeOCR: Bool
     ) -> AppSnapshot {
         let windowBounds = windowCapture.bounds
-        let screenshotPNGData = windowCapture.pngDataIfAvailable()
+        let screenshotPNGData = captureScreenshot ? windowCapture.pngDataIfAvailable() : nil
         let focusedElement = preferredFocusedElement(appElement: appElement, appPID: app.pid, focusedApplication: focusedApplication, systemWide: systemWide)
         let selectedText = focusedElement.flatMap(copySelectedText(_:))
         let context = RenderContext(windowBounds: windowBounds, focusedElement: focusedElement)
 
         var renderer = TreeRenderer(context: context)
-        renderer.render(rootElement)
+        renderer.render(rootElement, path: [app.name, "window"])
         if let menuBar = copyElement(appElement, attribute: kAXMenuBarAttribute),
            !CFEqual(menuBar, rootElement)
         {
-            renderer.render(menuBar)
+            renderer.render(menuBar, path: [app.name, "menuBar"])
         }
+
+        if includeOCR, let screenshotPNGData {
+            let observations = OCRPipeline.recognize(pngData: screenshotPNGData)
+            renderer.appendOCR(observations: observations)
+        }
+
+        let annotatedPNG = screenshotPNGData.flatMap {
+            SetOfMarkRenderer.annotate(pngData: $0, records: renderer.records)
+        } ?? screenshotPNGData
+        let presentationPNG = annotatedPNG ?? screenshotPNGData
 
         return AppSnapshot(
             app: app,
@@ -175,12 +219,15 @@ enum SnapshotBuilder {
             windowBounds: windowBounds,
             targetWindowID: windowCapture.windowID,
             targetWindowLayer: windowCapture.layer,
-            screenshotPNGData: screenshotPNGData,
+            screenshotPNGData: presentationPNG,
+            screenshotMetadata: screenshotMetadata(for: presentationPNG),
             mode: .accessibility,
             treeLines: renderer.lines,
+            identifierIndexLines: renderer.identifierIndexLines,
             focusedSummary: renderer.focusedSummary,
             focusedElement: focusedElement,
             selectedText: selectedText,
+            truncationFooter: renderer.truncationFooter,
             elements: renderer.records
         )
     }
@@ -205,10 +252,30 @@ enum SnapshotBuilder {
         }
 
         if recovered {
-            Thread.sleep(forTimeInterval: windowVisibilityRecoveryDelay)
+            _ = waitForVisibleWindow(appElement: appElement, timeout: windowVisibilityRecoveryTimeout)
         }
 
         return recovered
+    }
+
+    private static func waitForVisibleWindow(appElement: AXUIElement, timeout: TimeInterval) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let window = firstWindow(for: appElement) ?? firstAnyWindow(for: appElement),
+               isWindowVisible(window)
+            {
+                return true
+            }
+            Thread.sleep(forTimeInterval: windowVisibilityRecoveryPollInterval)
+        }
+        return false
+    }
+
+    private static func isWindowVisible(_ window: AXUIElement) -> Bool {
+        if boolValue(of: window, attribute: kAXMinimizedAttribute) == true {
+            return false
+        }
+        return true
     }
 
     private static func openBundleIdentifier(_ bundleIdentifier: String) -> Bool {
@@ -309,8 +376,13 @@ enum SnapshotBuilder {
             let focusSegment = focusedIdentifier == element.identifier ? " (focused)" : ""
             lines.append("\(String(repeating: "    ", count: element.index == 0 ? 0 : 1))\(element.index) \(element.role)\(titleSegment)\(focusSegment) ID: \(element.identifier)\(valueSegment)\(actionsSegment) Frame: \(element.frame.cgRect.renderedLocalFrame)")
 
+            let stableID = SnapshotStableElementID.make(
+                path: ["fixture", element.identifier],
+                identifier: element.identifier
+            )
             let record = ElementRecord(
                 index: element.index,
+                stableID: stableID,
                 identifier: element.identifier,
                 element: nil,
                 localFrame: element.frame.cgRect,
@@ -331,11 +403,16 @@ enum SnapshotBuilder {
             targetWindowID: nil,
             targetWindowLayer: nil,
             screenshotPNGData: nil,
+            screenshotMetadata: nil,
             mode: .fixture,
             treeLines: lines,
+            identifierIndexLines: records.values.sorted(by: { $0.index < $1.index }).map {
+                "\($0.stableID) -> \($0.index)"
+            },
             focusedSummary: focusedSummary,
             focusedElement: nil,
             selectedText: nil,
+            truncationFooter: nil,
             elements: records
         )
     }
@@ -675,15 +752,45 @@ private struct TreeRenderer {
     var nextIndex = 0
     var lines: [String] = []
     var records: [Int: ElementRecord] = [:]
-    var identifierIndex: [String: String] = [:]
+    var identifierIndexLines: [String] = []
     var focusedSummary: String?
+    var truncatedByNodeBudget = false
+    var truncatedByDepthBudget = false
+
+    var truncationFooter: String? {
+        guard truncatedByNodeBudget || truncatedByDepthBudget else {
+            return nil
+        }
+        var parts: [String] = []
+        if truncatedByNodeBudget {
+            parts.append("node budget \(accessibilityTreeMaxNodeCount)")
+        }
+        if truncatedByDepthBudget {
+            parts.append("depth budget \(accessibilityTreeMaxDepth)")
+        }
+        return "(truncated accessibility tree: \(parts.joined(separator: ", ")))"
+    }
 
     init(context: RenderContext) {
         self.context = context
     }
 
-    mutating func render(_ root: AXUIElement, depth: Int = 0, ancestors: [AXUIElement] = []) {
+    mutating func render(
+        _ root: AXUIElement,
+        depth: Int = 0,
+        ancestors: [AXUIElement] = [],
+        path: [String] = []
+    ) {
         guard shouldContinueRendering(nextIndex: nextIndex, depth: depth) else {
+            if depth >= accessibilityTreeMaxDepth {
+                truncatedByDepthBudget = true
+            } else {
+                truncatedByNodeBudget = true
+            }
+            return
+        }
+
+        if !isOnScreenElement(root, windowBounds: context.windowBounds) {
             return
         }
 
@@ -699,7 +806,7 @@ private struct TreeRenderer {
         let baseRoleText = roleDescription(of: root, role: role, subrole: subrole)
         let label = stringValue(of: root, attribute: kAXDescriptionAttribute)
         let help = stringValue(of: root, attribute: kAXHelpAttribute)
-        let value = sanitizedValue(of: root)
+        let value = sanitizedValue(of: root) ?? AttributedTextExtraction.excerpt(from: root)
         let axIdentifier = displayIdentifier(stringValue(of: root, attribute: kAXIdentifierAttribute))
         let traits = summarizeTraits(of: root)
         let actions = copyActions(root) ?? []
@@ -762,8 +869,9 @@ private struct TreeRenderer {
             genericTextSummary: genericTextSummary,
             webAreaDepth: webAreaDepth
         ) {
+            let childPath = path + [roleText]
             for child in childElements {
-                render(child, depth: depth, ancestors: nextAncestors)
+                render(child, depth: depth, ancestors: nextAncestors, path: childPath)
             }
             return
         }
@@ -807,11 +915,14 @@ private struct TreeRenderer {
         let actionsSegment = prettyActions.isEmpty ? "" : "\(actionsPrefix)\(prettyActions.joined(separator: ", "))"
         let linePrefix = roleText.isEmpty ? "\(index)" : "\(index) \(roleText)"
 
+        let frameSegment = localFrame.map { " Frame: \($0.renderedLocalFrame)" } ?? ""
         let lineBody = "\(linePrefix)\(traitsSegment)\(titleSegment)\(rowSummarySegment)\(labelSegment)\(helpSegment)\(urlSegment)\(identifierSegment)\(valueSegment)\(placeholderSegment)"
-        lines.append("\(String(repeating: "\t", count: depth))\(lineBody)\(actionsSegment)")
+        lines.append("\(String(repeating: "\t", count: depth))\(lineBody)\(actionsSegment)\(frameSegment)")
 
+        let stableID = SnapshotStableElementID.make(path: path + [roleText], identifier: axIdentifier)
         let record = ElementRecord(
             index: index,
+            stableID: stableID,
             identifier: axIdentifier,
             element: root,
             localFrame: localFrame,
@@ -819,9 +930,10 @@ private struct TreeRenderer {
             prettyActions: prettyActions
         )
         records[index] = record
+        identifierIndexLines.append("\(stableID) -> \(index)")
 
         if let axIdentifier, let localFrame {
-            identifierIndex[axIdentifier] = "\(axIdentifier) -> \(index) @ \(localFrame.renderedLocalFrame)"
+            identifierIndexLines.append("\(axIdentifier) -> \(index) @ \(localFrame.renderedLocalFrame)")
         }
 
         if let focusedElement = context.focusedElement, CFEqual(focusedElement, root) {
@@ -835,10 +947,11 @@ private struct TreeRenderer {
             return
         }
 
+        let childPath = path + [roleText]
         if rendersSummaryAsChildren, let genericTextSummary {
-            renderSyntheticText(genericTextSummary, representedBy: root, depth: depth + 1)
+            renderSyntheticText(genericTextSummary, representedBy: root, depth: depth + 1, path: childPath)
             for image in summaryImageChildren {
-                render(image, depth: depth + 1, ancestors: nextAncestors)
+                render(image, depth: depth + 1, ancestors: nextAncestors, path: childPath + ["image"])
             }
             return
         }
@@ -848,11 +961,40 @@ private struct TreeRenderer {
         }
 
         for child in childElements {
-            render(child, depth: depth + 1, ancestors: nextAncestors)
+            render(child, depth: depth + 1, ancestors: nextAncestors, path: childPath)
         }
     }
 
-    private mutating func renderSyntheticText(_ text: String, representedBy element: AXUIElement, depth: Int) {
+    mutating func appendOCR(observations: [OCRTextObservation]) {
+        guard !observations.isEmpty else {
+            return
+        }
+        lines.append("")
+        lines.append("OCR text (Vision):")
+        for observation in observations {
+            guard shouldContinueRendering(nextIndex: nextIndex, depth: 0) else {
+                truncatedByNodeBudget = true
+                break
+            }
+            let index = nextIndex
+            nextIndex += 1
+            let frameSegment = observation.localFrame.renderedLocalFrame
+            lines.append("\(index) ocr \"\(observation.text)\" Frame: \(frameSegment)")
+            let stableID = SnapshotStableElementID.make(path: ["ocr", observation.text], identifier: nil)
+            records[index] = ElementRecord(
+                index: index,
+                stableID: stableID,
+                identifier: nil,
+                element: nil,
+                localFrame: observation.localFrame,
+                rawActions: [],
+                prettyActions: []
+            )
+            identifierIndexLines.append("\(stableID) -> \(index)")
+        }
+    }
+
+    private mutating func renderSyntheticText(_ text: String, representedBy element: AXUIElement, depth: Int, path: [String]) {
         guard shouldContinueRendering(nextIndex: nextIndex, depth: depth) else {
             return
         }
@@ -861,15 +1003,19 @@ private struct TreeRenderer {
         nextIndex += 1
         lines.append("\(String(repeating: "\t", count: depth))\(index) text \(text)")
 
+        let localFrame = resolveLocalFrame(of: element, windowBounds: context.windowBounds)
+        let stableID = SnapshotStableElementID.make(path: path + ["syntheticText"], identifier: text)
         records[index] = ElementRecord(
             index: index,
+            stableID: stableID,
             identifier: nil,
             element: element,
-            localFrame: resolveLocalFrame(of: element, windowBounds: context.windowBounds),
+            localFrame: localFrame,
             rawActions: [],
             prettyActions: [],
             isSyntheticText: true
         )
+        identifierIndexLines.append("\(stableID) -> \(index)")
     }
 
     private func opaqueIdentifier(for element: AXUIElement) -> String {
@@ -900,6 +1046,7 @@ private struct TreeRenderer {
             hasVisibleChildren: !visibleChildren.isEmpty
         )
         var children: [AXUIElement] = []
+        var seen = Set<UnsafeRawPointer>()
 
         for attribute in attributes {
             let sourceValues: [AXUIElement]
@@ -918,9 +1065,7 @@ private struct TreeRenderer {
                     continue
                 }
 
-                if !children.contains(where: { CFEqual($0, child) }) {
-                    children.append(child)
-                }
+                _ = appendUniqueAXElement(child, to: &children, seen: &seen)
             }
         }
 
@@ -1507,18 +1652,15 @@ private func summaryImageDescendants(of element: AXUIElement, depth: Int = 0) ->
 
     let children = copyArray(element, attribute: kAXChildrenAttribute) ?? []
     var images: [AXUIElement] = []
+    var seen = Set<UnsafeRawPointer>()
 
     for child in children {
         let role = stringValue(of: child, attribute: kAXRoleAttribute) ?? ""
         if role == kAXImageRole as String {
-            if !images.contains(where: { CFEqual($0, child) }) {
-                images.append(child)
-            }
+            _ = appendUniqueAXElement(child, to: &images, seen: &seen)
         } else {
             for image in summaryImageDescendants(of: child, depth: depth + 1) {
-                if !images.contains(where: { CFEqual($0, image) }) {
-                    images.append(image)
-                }
+                _ = appendUniqueAXElement(image, to: &images, seen: &seen)
             }
         }
 
@@ -1856,6 +1998,41 @@ private func displayWindowTitle(_ value: String?, appName: String) -> String {
 
 private func quoted(_ value: String) -> String {
     "\"\(value)\""
+}
+
+private func axElementPointer(_ element: AXUIElement) -> UnsafeRawPointer {
+    UnsafeRawPointer(Unmanaged.passUnretained(element as CFTypeRef).toOpaque())
+}
+
+@discardableResult
+private func appendUniqueAXElement(
+    _ candidate: AXUIElement,
+    to elements: inout [AXUIElement],
+    seen: inout Set<UnsafeRawPointer>
+) -> Bool {
+    let key = axElementPointer(candidate)
+    guard seen.insert(key).inserted else {
+        return false
+    }
+    elements.append(candidate)
+    return true
+}
+
+private func isOnScreenElement(_ element: AXUIElement, windowBounds: CGRect?) -> Bool {
+    guard let windowBounds else {
+        return true
+    }
+
+    guard let frame = resolveLocalFrame(of: element, windowBounds: windowBounds) else {
+        return true
+    }
+
+    if frame.width <= 0 || frame.height <= 0 {
+        return false
+    }
+
+    let windowRect = CGRect(origin: .zero, size: windowBounds.size)
+    return windowRect.intersects(frame)
 }
 
 private extension CGRect {
