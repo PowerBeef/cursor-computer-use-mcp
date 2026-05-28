@@ -19,8 +19,10 @@ Ask the user before destructive or externally visible actions such as sending, d
 
 public final class StdioMCPServer {
     private let dispatcher: ComputerUseToolDispatcher
+    private let service: ComputerUseService
 
     public init(service: ComputerUseService = ComputerUseService()) {
+        self.service = service
         self.dispatcher = ComputerUseToolDispatcher(service: service)
     }
 
@@ -60,6 +62,9 @@ public final class StdioMCPServer {
                             "tools": [
                                 "listChanged": false,
                             ],
+                            "resources": [
+                                "listChanged": false,
+                            ],
                         ],
                         "instructions": computerUseServerInstructions,
                     ]
@@ -70,6 +75,10 @@ public final class StdioMCPServer {
                 VisualCursorSupport.performOnMain {
                     SoftwareCursorOverlay.reset()
                 }
+                service.resetCachedSnapshots()
+                Task {
+                    await SnapshotAXCache.shared.invalidateAll()
+                }
                 return nil
             case "ping":
                 return try encodeJSONRPCResult(id: id, result: [:])
@@ -78,6 +87,31 @@ public final class StdioMCPServer {
                     id: id,
                     result: [
                         "tools": ToolDefinitions.all.map(\.asDictionary),
+                    ]
+                )
+            case "resources/list":
+                return try encodeJSONRPCResult(
+                    id: id,
+                    result: [
+                        "resources": MCPScreenshotResourceStore.shared.list(),
+                    ]
+                )
+            case "resources/read":
+                let uri = params["uri"] as? String ?? ""
+                guard let pngData = MCPScreenshotResourceStore.shared.pngData(for: uri) else {
+                    return try encodeJSONRPCError(id: id, code: -32602, message: "Unknown screenshot resource: \(uri)")
+                }
+                let base64 = pngData.base64EncodedString()
+                return try encodeJSONRPCResult(
+                    id: id,
+                    result: [
+                        "contents": [
+                            [
+                                "uri": uri,
+                                "mimeType": "image/png",
+                                "blob": base64,
+                            ],
+                        ],
                     ]
                 )
             case "tools/call":
