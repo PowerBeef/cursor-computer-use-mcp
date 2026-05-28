@@ -1,17 +1,18 @@
 # Documentation index
 
-English documentation hub for **Cursor Computer Use**. Start at [AGENTS.md](../AGENTS.md) for agent navigation.
+English documentation hub for **Cairn**. Start at [AGENTS.md](../AGENTS.md) for agent navigation.
 
 ## Getting started
 
 | Doc | Purpose |
 |-----|---------|
 | [CURSOR.md](CURSOR.md) | **Canonical** install, permissions, Composer workflow, env vars |
+| [REBRAND.md](REBRAND.md) | Cairn naming decision and migration notes |
 | [macOS-26.md](macOS-26.md) | macOS 26 (Tahoe) capture and permission notes |
 | [FORK.md](FORK.md) | Project specifics (policy, MCP name, no Node wrapper) |
 | [BENCHMARK.md](BENCHMARK.md) | MCP benchmark harness |
-| [../skills/cursor-computer-use/SKILL.md](../skills/cursor-computer-use/SKILL.md) | Cursor agent skill |
-| [../plugins/cursor-computer-use/README.md](../plugins/cursor-computer-use/README.md) | Cursor plugin + `.mcp.json` |
+| [../skills/cairn/SKILL.md](../skills/cairn/SKILL.md) | Cursor agent skill |
+| [../plugins/cairn/README.md](../plugins/cairn/README.md) | Cursor plugin + `.mcp.json` |
 
 Install and workflow details live in **CURSOR.md** only; other files link there.
 

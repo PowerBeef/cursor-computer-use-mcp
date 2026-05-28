@@ -1,23 +1,23 @@
 # Project specifics
 
-Cursor Computer Use layers Cursor integration and macOS 26 requirements on top of the native `open-computer-use` automation stack. Third-party notices: [ATTRIBUTION.md](../ATTRIBUTION.md).
+Cairn layers Cursor integration and macOS 26 requirements on top of the native `cairn` automation stack. Third-party notices: [ATTRIBUTION.md](../ATTRIBUTION.md).
 
 ## What this repository adds
 
 | Area | Location |
 |------|----------|
-| Cursor MCP install | `open-computer-use install-cursor-mcp`, [scripts/install-cursor-mcp.sh](../scripts/install-cursor-mcp.sh) |
-| MCP server name | `cursor-computer-use` in Cursor (9 tools via `open-computer-use mcp`) |
-| Policy | [ComputerUsePolicy.swift](../packages/OpenComputerUseKit/Sources/OpenComputerUseKit/ComputerUsePolicy.swift), `.cursor/computer-use-policy.json` |
-| Composer tool hints | [ToolDefinitions.swift](../packages/OpenComputerUseKit/Sources/OpenComputerUseKit/ToolDefinitions.swift), [MCPServer.swift](../packages/OpenComputerUseKit/Sources/OpenComputerUseKit/MCPServer.swift) |
-| Docs and skill | [CURSOR.md](CURSOR.md), [macOS-26.md](macOS-26.md), [skills/cursor-computer-use/](../skills/cursor-computer-use/) |
-| Plugin stub | [plugins/cursor-computer-use/](../plugins/cursor-computer-use/) |
+| Cursor MCP install | `cairn install-cursor-mcp`, [scripts/install-cursor-mcp.sh](../scripts/install-cursor-mcp.sh) |
+| MCP server name | `cairn` in Cursor (9 tools via `cairn mcp`) |
+| Policy | [CairnPolicy.swift](../packages/CairnKit/Sources/CairnKit/CairnPolicy.swift), `.cursor/cairn-policy.json` |
+| Composer tool hints | [ToolDefinitions.swift](../packages/CairnKit/Sources/CairnKit/ToolDefinitions.swift), [MCPServer.swift](../packages/CairnKit/Sources/CairnKit/MCPServer.swift) |
+| Docs and skill | [CURSOR.md](CURSOR.md), [macOS-26.md](macOS-26.md), [skills/cairn/](../skills/cairn/) |
+| Plugin stub | [plugins/cairn/](../plugins/cairn/) |
 | Benchmarks | [benchmarks/](../benchmarks/), [BENCHMARK.md](BENCHMARK.md) |
 
 ## What this repository does not add
 
-- No TypeScript/Node hybrid MCP wrapper (`dist/index.js` style). Use native `open-computer-use mcp` only.
-- Do not enable legacy **`computer-use-mcp`** (single `computer` tool) alongside **`cursor-computer-use`** unless you are running an explicit legacy comparison.
+- No TypeScript/Node hybrid MCP wrapper (`dist/index.js` style). Use native `cairn mcp` only.
+- Do not enable legacy **`computer-use-mcp`** (single `computer` tool) alongside **`cairn`** unless you are running an explicit legacy comparison.
 
 ## macOS 26 (Tahoe) minimum
 
@@ -29,8 +29,8 @@ Tahoe-specific capture and permission notes: [macOS-26.md](macOS-26.md).
 
 Policy files (optional):
 
-- Project: `.cursor/computer-use-policy.json` (see [computer-use-policy.example.json](../.cursor/computer-use-policy.example.json))
-- User: `~/.cursor/computer-use-policy.json`
+- Project: `.cursor/cairn-policy.json` (see [cairn-policy.example.json](../.cursor/cairn-policy.example.json))
+- User: `~/.cursor/cairn-policy.json`
 
 Fields: `denyPasswordManagers`, `allowApps`, `denyBundleIds`.
 

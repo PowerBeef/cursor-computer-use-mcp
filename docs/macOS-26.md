@@ -4,17 +4,17 @@ This fork’s **macOS native build requires macOS 26 (Tahoe)+**. Linux and Windo
 
 ## Permissions
 
-Grant **Accessibility** and **Screen Recording** to **Open Computer Use.app**, not Terminal or Cursor.
+Grant **Accessibility** and **Screen Recording** to **Cairn.app**, not Terminal or Cursor.
 
 ```bash
-open-computer-use doctor
-open-computer-use doctor --cursor
+cairn doctor
+cairn doctor --cursor
 ```
 
 ## Vision (OCR + presentation)
 
 - **Set-of-Mark**: annotated PNG overlays use each indexed control's window-relative frame.
-- **Apple Vision OCR** (`VNRecognizeTextRequest`): opt-in via `get_app_state` `ocr: true` or `OPEN_COMPUTER_USE_OCR_DEFAULT=1`.
+- **Apple Vision OCR** (`VNRecognizeTextRequest`): opt-in via `get_app_state` `ocr: true` or `CAIRN_OCR_DEFAULT=1`.
 - **Attributed text**: web areas and text fields may expose `AXAttributedStringForTextMarkerRange` excerpts when plain `AXValue` is empty.
 
 If permissions look granted but capture still fails, quit and reopen the app that launched MCP, then rerun `doctor`.
@@ -30,8 +30,8 @@ Tahoe can return stale `SCShareableContent` after sleep, display hotplug, or ext
 Enable debug logging:
 
 ```bash
-export OPEN_COMPUTER_USE_DEBUG_INPUT_FALLBACKS=1
-open-computer-use call get_app_state --args '{"app":"TextEdit"}'
+export CAIRN_DEBUG_INPUT_FALLBACKS=1
+cairn call get_app_state --args '{"app":"TextEdit"}'
 ```
 
 ## System Settings
@@ -41,7 +41,7 @@ Query aliases include **System Settings** → `com.apple.systempreferences` (and
 Composer prompt example:
 
 ```
-open-computer-use call get_app_state --args '{"app":"System Settings"}'
+cairn call get_app_state --args '{"app":"System Settings"}'
 ```
 
 ## Known limitations
@@ -54,7 +54,7 @@ open-computer-use call get_app_state --args '{"app":"System Settings"}'
 | Symptom | Action |
 |---------|--------|
 | Screenshot shows desktop only | Rerun `doctor`; wake display; retry `get_app_state`; check debug logs |
-| Blank MCP tools | Ensure `open-computer-use` on PATH; disable legacy `computer-use-mcp` |
-| Wrong app blocked | Edit `.cursor/computer-use-policy.json` |
+| Blank MCP tools | Ensure `cairn` on PATH; disable legacy `computer-use-mcp` |
+| Wrong app blocked | Edit `.cursor/cairn-policy.json` |
 
 See also [CURSOR.md](CURSOR.md) and [BENCHMARK.md](BENCHMARK.md).

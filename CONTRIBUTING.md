@@ -2,7 +2,7 @@
 
 This repository is set up for agent-first development. These rules apply to humans and agents alike.
 
-## Cursor Computer Use
+## Cairn
 
 When your change affects Cursor install, policy, Composer workflow, macOS 26 behavior, or benchmarks, update [docs/CURSOR.md](docs/CURSOR.md), [docs/FORK.md](docs/FORK.md), [docs/BENCHMARK.md](docs/BENCHMARK.md), and [AGENTS.md](AGENTS.md) in the same PR. See [docs/README.md](docs/README.md) for the full map.
 

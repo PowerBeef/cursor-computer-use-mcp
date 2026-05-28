@@ -15,7 +15,7 @@
 
 - 日常修复、官方 `computer-use` 对齐验证和本地回归，默认只构建本地 app / 二进制并让 MCP client 指向本地构建产物。
 - 不要把 patch release 当作普通验证手段；只有用户明确要求公开发版，或某个修复已经达到需要交付给外部用户的稳定状态时，才进入下面的 release checklist。
-- 如果只是为了让 Codex 使用最新本地实现，优先更新本机 `~/.codex/config.toml` 中的 `open-computer-use` MCP server command，指向仓库本地构建产物，而不是 bump 版本、打 tag、推 release。
+- 如果只是为了让 Codex 使用最新本地实现，优先更新本机 `~/.codex/config.toml` 中的 `cairn` MCP server command，指向仓库本地构建产物，而不是 bump 版本、打 tag、推 release。
 
 ## 当前 release 入口
 
@@ -31,7 +31,7 @@
 
 这个仓库当前有两类 release 版本源：
 
-- npm staging 包版本：以 `plugins/open-computer-use/.codex-plugin/plugin.json` 里的 `version` 为准。
+- npm staging 包版本：以 `plugins/cairn/.cursor-plugin/plugin.json` 里的 `version` 为准（macOS 主线 Cairn 的版本源）。Codex 上游插件版本仍由 `plugins/open-computer-use/.codex-plugin/plugin.json` 控制。
 - `CursorMotion-<version>.dmg` 文件名与 GitHub Release asset 版本：以 release tag 为准；workflow 会把 `vX.Y.Z` 规范化成 `X.Y.Z` 写进 DMG 文件名，也可以在本地显式传 `--version`。
 
 也就是说：
@@ -47,12 +47,13 @@
 
 至少检查并同步这些位置：
 
-- `plugins/open-computer-use/.codex-plugin/plugin.json`
-- `packages/OpenComputerUseKit/Sources/OpenComputerUseKit/OpenComputerUseVersion.swift`
-- `apps/OpenComputerUseSmokeSuite/Sources/OpenComputerUseSmokeSuite/main.swift`
-- `packages/OpenComputerUseKit/Tests/OpenComputerUseKitTests/OpenComputerUseKitTests.swift`
-- `apps/OpenComputerUseLinux/main.go`
-- `apps/OpenComputerUseWindows/main.go`
+- `plugins/cairn/.cursor-plugin/plugin.json` *(Cairn version source)*
+- `plugins/open-computer-use/.codex-plugin/plugin.json` *(upstream Codex plugin version)*
+- `packages/CairnKit/Sources/CairnKit/CairnVersion.swift`
+- `apps/CairnSmokeSuite/Sources/CairnSmokeSuite/main.swift`
+- `packages/CairnKit/Tests/CairnKitTests/CairnKitTests.swift`
+- `apps/OpenComputerUseLinux/main.go` *(upstream-tracked)*
+- `apps/OpenComputerUseWindows/main.go` *(upstream-tracked)*
 - `scripts/computer-use-cli/main.go`
 - `scripts/computer-use-cli/README.md`
 - `docs/releases/feature-release-notes.md`
@@ -73,16 +74,16 @@ node ./scripts/npm/build-packages.mjs --out-dir dist/release/npm-staging-check
 然后直接检查 staging 包版本和 DMG 文件名：
 
 ```bash
-node -p "require('./dist/release/npm-staging-check/open-computer-use/package.json').version"
-test -x "dist/release/npm-staging-check/open-computer-use/dist/linux/arm64/open-computer-use"
-test -f "dist/release/npm-staging-check/open-computer-use/dist/windows/arm64/open-computer-use.exe"
-node -e "if (require('./dist/release/npm-staging-check/open-computer-use/package.json').optionalDependencies) process.exit(1)"
+node -p "require('./dist/release/npm-staging-check/cairn-computer-use/package.json').version"
+test -x "dist/release/npm-staging-check/cairn-computer-use/dist/linux/arm64/open-computer-use"
+test -f "dist/release/npm-staging-check/cairn-computer-use/dist/windows/arm64/open-computer-use.exe"
+node -e "if (require('./dist/release/npm-staging-check/cairn-computer-use/package.json').optionalDependencies) process.exit(1)"
 ls dist/release/cursor-motion/CursorMotion-0.1.14.dmg
 ```
 
 如果这里打印的不是目标版本，或者 DMG 没按目标版本名产出，不要打 tag。
 
-如果当前 checkout 里已经有和目标版本一致的 `dist/Open Computer Use.app`，也可以临时加 `--skip-build` 跳过重复构建；但在干净 checkout 里不要默认加这个参数，否则 staging 脚本会因为缺少 `dist/Open Computer Use.app` 而失败。
+如果当前 checkout 里已经有和目标版本一致的 `dist/Cairn.app`，也可以临时加 `--skip-build` 跳过重复构建；但在干净 checkout 里不要默认加这个参数，否则 staging 脚本会因为缺少 `dist/Cairn.app` 而失败。
 
 ### 3. 提交版本 bump
 
@@ -150,10 +151,10 @@ gh run view -R iFurySt/open-codex-computer-use <run-id> --log-failed
 
 ## 当前已知边界
 
-- `Open Computer Use` 的 npm release 产物在没有配置 `OPEN_COMPUTER_USE_CODESIGN_P12_BASE64` / `OPEN_COMPUTER_USE_CODESIGN_P12_PASSWORD` 等 secrets 时，仍会退回 ad-hoc signing；配置后会先导入 `Developer ID Application` 证书，再按该 identity 统一签名。
-- `Cursor Motion` 当前 release 资产会优先复用 `OPEN_COMPUTER_USE_CODESIGN_*` 对 app 做 `Developer ID Application` 签名；如果同时配置 `APPLE_NOTARY_API_KEY_P8_BASE64`、`APPLE_NOTARY_KEY_ID`、`APPLE_NOTARY_ISSUER_ID`、`APPLE_DEVELOPER_TEAM_ID`，workflow 会继续对 `.dmg` 执行 notarization 和 staple。
+- `Cairn` 的 npm release 产物在没有配置 `CAIRN_CODESIGN_P12_BASE64` / `CAIRN_CODESIGN_P12_PASSWORD` 等 secrets 时，仍会退回 ad-hoc signing；配置后会先导入 `Developer ID Application` 证书，再按该 identity 统一签名。
+- `Cursor Motion` 当前 release 资产会优先复用 `CAIRN_CODESIGN_*` 对 app 做 `Developer ID Application` 签名；如果同时配置 `APPLE_NOTARY_API_KEY_P8_BASE64`、`APPLE_NOTARY_KEY_ID`、`APPLE_NOTARY_ISSUER_ID`、`APPLE_DEVELOPER_TEAM_ID`，workflow 会继续对 `.dmg` 执行 notarization 和 staple。
 - 如果上述 secrets 缺失，workflow 会分别退回 ad-hoc signing 或跳过 notarization，而不是阻塞整条 release。
-- `open-computer-use` npm root 包会内置六个 `os-arch` native artifacts，包体积会比 macOS-only 版本更大；release 前要确认 staging 包里包含 `dist/Open Computer Use.app`、`dist/linux/` 和 `dist/windows/`，并确认 launcher 没有声明 `optionalDependencies`。
+- `cairn` npm root 包会内置六个 `os-arch` native artifacts，包体积会比 macOS-only 版本更大；release 前要确认 staging 包里包含 `dist/Cairn.app`、`dist/linux/` 和 `dist/windows/`，并确认 launcher 没有声明 `optionalDependencies`。
 
 ## 如果 tag 已经打错了
 
