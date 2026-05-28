@@ -130,8 +130,7 @@ public enum PermissionSupport {
     private static let developmentAppBundleName = "\(developmentBundleDisplayName).app"
     private static let appVariantInfoKey = "CairnAppVariant"
     private static let npmPackageNames = [
-        "cairn",
-        "cairn-mcp",
+        "cairn-computer-use",
         "open-codex-computer-use-mcp",
     ]
 

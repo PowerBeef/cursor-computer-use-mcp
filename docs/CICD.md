@@ -32,7 +32,6 @@
 
 - `dist/release/release-manifest.json`
 - `dist/release/npm/cairn-computer-use-<version>.tgz`
-- `dist/release/npm/cairn-mcp-<version>.tgz`
 - `dist/release/cursor-motion/CursorMotion-<version>.dmg`
 - GitHub Actions 中上传的 npm release artifact
 - GitHub Releases 中和 tag 对齐的 `CursorMotion-<version>.dmg`

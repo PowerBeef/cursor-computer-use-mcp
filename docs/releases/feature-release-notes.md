@@ -4,6 +4,7 @@
 
 | 日期 | 功能域 | 用户价值 | 变更摘要 |
 | --- | --- | --- | --- |
+| 2026-05-28 | Cairn 品牌首个 npm 发布 | 用户可以通过 `npm install -g cairn-computer-use` 安装重命名后的 Cairn CLI 与 `Cairn.app`，`cairn` / `cairn-mcp` 作为包内二进制别名保留；不再依赖旧的 `open-computer-use` 包名。 | 发布 `0.2.0`，作为 rebrand 后的首个正式版本：将 npm 发布集合收敛为单一 `cairn-computer-use` 包（`cairn-mcp` 独立包名被无关项目占用，仅保留为 bin 别名），更新 `PermissionSupport.npmPackageNames` 的 bundle 发现路径为 `cairn-computer-use`，并同步版本源（`plugin.json` / `CairnVersion.swift` / smoke suite）。 |
 | 2026-05-20 | macOS 权限完成态 | 已经完成 Accessibility / Screen Recording 授权后，权限引导浮层会根据当前运行进程的真实 preflight 状态及时退出，不再因为 stale TCC path 查询结果继续悬浮。 | 发布 `0.1.51`，`PermissionDiagnostics.current()` 合并 TCC 持久授权与 runtime preflight 正信号，并新增本机端到端脚本覆盖 `doctor` 已 granted 时 onboarding 快速退出的路径。 |
 | 2026-05-13 | macOS 点击与输入稳定性 | 飞书 / Lark 会话列表点击不再误触右侧“完成”动作，中文、emoji 等富文本输入更稳定；同时 Chrome/GitHub 这类普通浏览器页面的 container/link 点击保持原有行为不退化。 | 发布 `0.1.50`，macOS `type_text` 按 grapheme cluster 批量投递 Unicode，并在 Electron 可设置输入框上优先写 `AXValue`；点击链路增加 synthetic row 左侧安全锚点、side action 过滤和 Electron-scoped 行级 `AXPress` 优化，同时用 Chrome/GitHub pinned repo 对照验证避免浏览器 WebArea 退化。 |
 | 2026-05-11 | macOS 文件选择弹窗 | 上传/打开文件弹窗里右侧文件列表现在可被读取和点击，选择图片后 Open 按钮能正常触发，不再只能操作左侧目录。 | 发布 `0.1.49`，macOS AX snapshot 补上 `AXContents` / `AXVisibleChildren` 遍历，coordinate click 优先选择原生 `AXList` 子项，并让截图窗口在重叠 sheet 场景下优先绑定前台 open panel；补对应单元测试和 history。 |

@@ -21,7 +21,7 @@ The previous identity carried three problems:
 | Brand | **Cairn** |
 | Tagline | *Cairn — native macOS control for AI agents through MCP.* |
 | GitHub repository | `PowerBeef/cairn-computer-use` |
-| npm package | `cairn-computer-use` (binary `cairn`, alias `cairn-mcp`) |
+| npm package | `cairn-computer-use` (single published package; binaries `cairn`, `cairn-mcp`) |
 | CLI binary | `cairn` |
 | MCP server key | `cairn` |
 | Resource URI scheme | `cairn://screenshot/latest` |
@@ -33,6 +33,8 @@ The previous identity carried three problems:
 | Project domain | `cairnmcp.com` (reserved, not yet registered) |
 
 The npm package keeps `cairn-computer-use` (rather than the bare `cairn`, which is taken on npm) so the global install command stays concrete: `npm install -g cairn-computer-use` installs the `cairn` binary. This mirrors the `kubectl` / `kubernetes-client` pattern.
+
+The package row above lists `cairn` and `cairn-mcp` as **binary aliases** only. The single published npm package is `cairn-computer-use`; the binaries `cairn` and `cairn-mcp` are `bin` entries inside it. The standalone npm package name `cairn-mcp` is owned by an unrelated project (`tommoman`, cairn.fyi), so we do **not** publish a second `cairn-mcp` package.
 
 ## What changed in this commit series
 
@@ -88,7 +90,7 @@ Bundle id changed from `com.ifuryst.opencomputeruse` (upstream) → `com.powerbe
 
 1. **Local working directory rename.** This workspace is still `cursor_computer_use/` on disk. Rename after closing the current Cursor session so the editor doesn't lose its workspace context. Suggested: `~/Coding_Projects/cairn-computer-use/`.
 2. **GitHub repository rename.** From `PowerBeef/cursor-computer-use-mcp` (or wherever it currently lives) to `PowerBeef/cairn-computer-use`. Use `gh repo rename`; GitHub preserves issue / PR URLs and redirects clones.
-3. **npm publish.** Register `cairn-computer-use` on npm, set up trusted publishing from the existing release workflow, and tag a `0.2.0` release that ships under the new name. The old `open-codex-computer-use-mcp` alias is dropped from the bin map in this commit; if you need a deprecation alias, add a new commit that re-introduces it pointing at the same launcher.
+3. **npm publish.** *(In progress as of 0.2.0 prep.)* The single published package is `cairn-computer-use` (available on npm; `cairn` and `cairn-mcp` are taken by unrelated projects, so they remain bin aliases only — `cairn-mcp` was dropped from `metaPackageNames` in `scripts/npm/build-packages.mjs`). Publish via the [release workflow](../.github/workflows/release.yml): configure auth on npmjs, bump the version source (`plugins/cairn/.cursor-plugin/plugin.json`), then push a `v0.2.0` tag. For the **first** publish of a brand-new package name, npm OIDC trusted publishing cannot be pre-attached, so add an `NPM_TOKEN` repo secret (granular automation token with publish access scoped to `cairn-computer-use`); the workflow's token fallback will use it. After the first publish, attach a trusted publisher on npmjs pointing at `PowerBeef/cairn-computer-use` + `release.yml` and the `NPM_TOKEN` becomes optional. Note: the release workflow's provenance is cleanest once the GitHub repo rename (followup 2) is done.
 4. **Domain registration.** Reserve `cairnmcp.com` and wire it to the GitHub Pages / docs site once a marketing surface exists. Until then, the canonical URL is the GitHub repo.
 5. **macOS app signing.** `com.powerbeef.cairn` needs a Developer ID-signed build before TestFlight-style distribution. Today the build script falls back to ad-hoc signing.
 6. **Linux / Windows rebrand decision.** If we want a single binary name across platforms, fork the upstream Go ports here and rename them too. Until then, only macOS is `cairn`.

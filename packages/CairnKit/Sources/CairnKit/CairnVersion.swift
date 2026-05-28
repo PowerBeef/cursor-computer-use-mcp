@@ -1,6 +1,6 @@
 import Foundation
 
-public let cairnVersion = "0.1.51"
+public let cairnVersion = "0.2.0"
 
 public func resolvedCairnVersion(bundle: Bundle = .main) -> String {
     if let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,

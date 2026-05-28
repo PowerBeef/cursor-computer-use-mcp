@@ -23,7 +23,6 @@ const appBundleName = "Cairn.app";
 const appExecutableName = "Cairn";
 const metaPackageNames = [
   "cairn-computer-use",
-  "cairn-mcp",
 ];
 const runtimeTargets = [
   {
