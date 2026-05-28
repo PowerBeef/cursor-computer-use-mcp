@@ -1,24 +1,29 @@
 # Cursor Computer Use
 
-**MCP server for native macOS desktop automation in Cursor** — nine Codex-style tools over Accessibility and ScreenCaptureKit, without a Node wrapper.
+**Let Cursor agents drive your Mac desktop** — list windows, read UI trees, click, type, and scroll through a native MCP server built for Composer, not a Node screenshot wrapper.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-CURSOR.md-green)](./docs/CURSOR.md)
+[![MCP tools](https://img.shields.io/badge/MCP-9%20tools-blueviolet)](#mcp-tools)
 [![macOS 26+](https://img.shields.io/badge/macOS-26%2B%20(Tahoe)-lightgrey)](./docs/macOS-26.md)
+[![Setup guide](https://img.shields.io/badge/docs-Setup-green)](./docs/CURSOR.md)
 
-## What it is
+---
 
-Cursor Computer Use connects Cursor to the macOS desktop through a local MCP server. Agents can list apps, read accessibility trees, click, type, scroll, and verify UI state using the same nine-tool surface as Codex Computer Use — implemented in Swift and exposed as `open-computer-use mcp`.
+## Why use this
 
-- **Cursor-first:** `install-cursor-mcp`, Composer-tuned tool descriptions, optional policy files, and a dedicated skill pack
-- **Native runtime:** `OpenComputerUseKit` + **Open Computer Use.app** (not Terminal/Cursor) holds Accessibility and Screen Recording permissions
-- **No hybrid MCP:** one stdio server, nine tools — not a single bundled `computer` tool from legacy packages
+| | Cursor Computer Use | Legacy `computer-use-mcp` |
+|---|---------------------|---------------------------|
+| Tools in Cursor | **9** named tools (`list_apps`, `click`, …) | 1 bundled `computer` tool |
+| Runtime | Swift + **Open Computer Use.app** (own permissions) | Node + screen coordinates |
+| Built for | Cursor install, policy, Composer hints, skill pack | Generic npm package |
+
+Agents work from **accessibility trees and `element_index`**, not guesswork on pixel coordinates. Permissions live on **Open Computer Use.app**, so you are not granting screen recording to Terminal or Cursor itself.
 
 ## Requirements
 
-- **macOS 26 (Tahoe) or later** for the native build in this repository
-- **Accessibility** and **Screen Recording** granted to **Open Computer Use.app**
+- **macOS 26 (Tahoe)** or later for this repository’s native build
 - **Cursor** with MCP enabled
+- **Accessibility** and **Screen Recording** for **Open Computer Use.app** (the installer walks you through this)
 
 ## Quick start
 
@@ -28,34 +33,49 @@ open-computer-use install-cursor-mcp
 open-computer-use doctor
 ```
 
-1. In **Cursor → Settings → MCP**, enable **`cursor-computer-use`** (expect **9 tools**).
-2. Disable legacy **`computer-use-mcp`** if present (single `computer` tool).
-3. Optional: copy [`.cursor/computer-use-policy.example.json`](./.cursor/computer-use-policy.example.json) to `.cursor/computer-use-policy.json`.
+Then in Cursor:
 
-Full workflow and troubleshooting: **[docs/CURSOR.md](docs/CURSOR.md)**.
+1. **Settings → MCP** — turn on **`cursor-computer-use`** and confirm you see **9 tools**.
+2. Turn off legacy **`computer-use-mcp`** if it is still listed (avoids duplicate automation).
+3. *(Optional)* Copy [`.cursor/computer-use-policy.example.json`](./.cursor/computer-use-policy.example.json) → `.cursor/computer-use-policy.json` to restrict apps (e.g. password managers).
 
-## Features
+**Troubleshooting and Composer workflow:** [docs/CURSOR.md](docs/CURSOR.md)
 
-| Area | Details |
-|------|---------|
-| MCP tools | `list_apps`, `get_app_state`, `click`, `perform_secondary_action`, `scroll`, `drag`, `type_text`, `press_key`, `set_value` |
-| Policy | Denylist for password managers and **Passwords**; optional allow/deny lists — see [docs/FORK.md](docs/FORK.md) |
-| macOS 26 | ScreenCaptureKit hardening and Tahoe permission notes — [docs/macOS-26.md](docs/macOS-26.md) |
-| Agent skill | [skills/cursor-computer-use/SKILL.md](skills/cursor-computer-use/SKILL.md) |
-| Plugin | [plugins/cursor-computer-use/](plugins/cursor-computer-use/) with `.mcp.json` |
-| Benchmarks | `npm run benchmark` — [docs/BENCHMARK.md](docs/BENCHMARK.md) |
+## MCP tools
+
+| Tool | What it does |
+|------|----------------|
+| `list_apps` | Running apps you can target |
+| `get_app_state` | Accessibility tree (+ optional screenshot); call before/after actions |
+| `click` | Activate a control by `element_index` |
+| `perform_secondary_action` | Right-click / secondary action |
+| `scroll` | Scroll a control or region |
+| `drag` | Drag between elements |
+| `type_text` | Type into focused UI |
+| `press_key` | Key chords and shortcuts |
+| `set_value` | Set text field values directly |
+
+Typical loop: **`list_apps` → `get_app_state` → act → `get_app_state` again** to verify. Prefer **`element_index`** over raw coordinates.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  Cursor[Cursor MCP client] -->|stdio JSON-RPC| CLI[open-computer-use mcp]
+  Cursor[Cursor] -->|stdio MCP| CLI[open-computer-use mcp]
   CLI --> App[Open Computer Use.app]
   App --> AX[Accessibility + ScreenCaptureKit]
-  AX --> Desktop[macOS desktop UI]
+  AX --> UI[macOS apps]
 ```
 
-The CLI launches or talks to **Open Computer Use.app**, which performs automation under its own TCC identity. Responses include accessibility trees and optional screenshots for `element_index`-based actions.
+The CLI talks to **Open Computer Use.app**, which holds TCC permissions and performs automation. Cursor never needs direct Accessibility access.
+
+## What you get in this repo
+
+- **`install-cursor-mcp`** — wires MCP into Cursor (project or user scope)
+- **Policy** — optional allow/deny lists; password managers denied by default ([docs/FORK.md](docs/FORK.md))
+- **Skill + plugin** — [skills/cursor-computer-use/](skills/cursor-computer-use/SKILL.md), [plugins/cursor-computer-use/](plugins/cursor-computer-use/)
+- **macOS 26 notes** — capture and permission hardening ([docs/macOS-26.md](docs/macOS-26.md))
+- **Benchmarks** — `npm run benchmark` ([docs/BENCHMARK.md](docs/BENCHMARK.md))
 
 ## Build and test
 
@@ -69,17 +89,16 @@ BENCHMARK_TRIALS=1 npm run benchmark
 
 | Doc | Purpose |
 |-----|---------|
-| [docs/README.md](docs/README.md) | Full documentation map |
 | [docs/CURSOR.md](docs/CURSOR.md) | Install, permissions, Composer workflow |
+| [docs/README.md](docs/README.md) | Full documentation map |
 | [docs/macOS-26.md](docs/macOS-26.md) | Tahoe capture and permissions |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Linux/Windows and other MCP clients |
 | [AGENTS.md](AGENTS.md) | Agent navigation |
 
 ## Other MCP clients
 
-Any client that supports local stdio MCP can run `open-computer-use mcp` with the same nine tools. Platform notes for Linux and Windows builds live in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Any host that supports local stdio MCP can run `open-computer-use mcp` with the same nine tools. Platform-specific notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License
 
-[MIT](./LICENSE)
-
-Derived work notice: [ATTRIBUTION.md](ATTRIBUTION.md)
+[MIT](./LICENSE) — derived work notice: [ATTRIBUTION.md](ATTRIBUTION.md)
