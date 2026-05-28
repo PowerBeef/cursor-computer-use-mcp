@@ -45,10 +45,21 @@ public struct CursorDoctorDiagnostics: Sendable {
     private static func scanCursorMCPConfigs() -> [String] {
         var warnings: [String] = []
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let paths = [
+        var paths = [
             home.appendingPathComponent(".cursor/mcp.json"),
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".cursor/mcp.json"),
         ]
+
+        if let projectRoot = ProcessInfo.processInfo.environment["OPEN_COMPUTER_USE_PROJECT_ROOT"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !projectRoot.isEmpty
+        {
+            let projectMCP = URL(fileURLWithPath: projectRoot, isDirectory: true)
+                .appendingPathComponent(".cursor/mcp.json")
+            if !paths.contains(projectMCP) {
+                paths.append(projectMCP)
+            }
+        }
 
         for path in paths {
             guard let data = try? Data(contentsOf: path),

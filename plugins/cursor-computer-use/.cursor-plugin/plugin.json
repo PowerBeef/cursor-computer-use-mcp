@@ -1,6 +1,6 @@
 {
   "name": "cursor-computer-use",
-  "version": "0.1.0",
+  "version": "0.1.51",
   "description": "Native macOS Computer Use MCP for Cursor (9 tools, Set-of-Mark screenshots, policy).",
   "author": {
     "name": "PowerBeef"
@@ -17,7 +17,7 @@
   ],
   "mcpServers": "./.mcp.json",
   "skills": [
-    "../../skills/cursor-computer-use"
+    "./skills/cursor-computer-use"
   ],
   "interface": {
     "displayName": "Cursor Computer Use",

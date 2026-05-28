@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-26
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "24"
+
+      - name: Swift build and test
+        run: swift build && swift test
+
+      - name: Check documentation links
+        run: make check-docs
+
+      - name: Package skills
+        run: npm run package:skill
+
+      - name: Install helper tests
+        run: node --test scripts/install-config-helper.test.mjs
+
+      - name: Syntax-check install scripts
+        run: |
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find scripts -type f -name '*.mjs' | sort)

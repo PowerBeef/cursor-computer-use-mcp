@@ -184,10 +184,25 @@ enum ComputerUsePolicy {
         )
     }
 
+    private static func projectRootURL() -> URL? {
+        guard let raw = ProcessInfo.processInfo.environment["OPEN_COMPUTER_USE_PROJECT_ROOT"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !raw.isEmpty
+        else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: raw, isDirectory: true)
+    }
+
     private static func policyPaths() -> [URL] {
         var paths: [URL] = [userPolicyPath]
-        let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
-        paths.append(cwd.appendingPathComponent(".cursor/\(projectPolicyFileName)"))
+        if let projectRoot = projectRootURL() {
+            paths.append(projectRoot.appendingPathComponent(".cursor/\(projectPolicyFileName)"))
+        } else {
+            let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+            paths.append(cwd.appendingPathComponent(".cursor/\(projectPolicyFileName)"))
+        }
         return paths
     }
 

@@ -2,18 +2,23 @@ import ApplicationServices
 import Foundation
 
 /// Lightweight AX tree cache keyed by app PID. Invalidated on MCP turn-ended and TTL expiry.
-actor SnapshotAXCache {
-    static let shared = SnapshotAXCache()
+public final class SnapshotAXCache: @unchecked Sendable {
+    public static let shared = SnapshotAXCache()
 
     private struct Entry {
         let snapshot: AppSnapshot
         let capturedAt: Date
     }
 
+    private let lock = NSLock()
     private var entries: [pid_t: Entry] = [:]
     private let ttl: TimeInterval = 2.0
 
-    func cachedSnapshot(for app: RunningAppDescriptor) -> AppSnapshot? {
+    private init() {}
+
+    public func cachedSnapshot(for app: RunningAppDescriptor) -> AppSnapshot? {
+        lock.lock()
+        defer { lock.unlock() }
         guard let entry = entries[app.pid] else {
             return nil
         }
@@ -24,15 +29,21 @@ actor SnapshotAXCache {
         return entry.snapshot
     }
 
-    func store(_ snapshot: AppSnapshot, for app: RunningAppDescriptor) {
+    public func store(_ snapshot: AppSnapshot, for app: RunningAppDescriptor) {
+        lock.lock()
         entries[app.pid] = Entry(snapshot: snapshot, capturedAt: Date())
+        lock.unlock()
     }
 
-    func invalidateAll() {
+    public func invalidateAll() {
+        lock.lock()
         entries.removeAll()
+        lock.unlock()
     }
 
-    func invalidate(pid: pid_t) {
+    public func invalidate(pid: pid_t) {
+        lock.lock()
         entries.removeValue(forKey: pid)
+        lock.unlock()
     }
 }

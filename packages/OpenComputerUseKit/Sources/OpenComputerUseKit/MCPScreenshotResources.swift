@@ -41,4 +41,11 @@ public final class MCPScreenshotResourceStore: @unchecked Sendable {
             ],
         ]
     }
+
+    public func clear() {
+        lock.lock()
+        latestURI = nil
+        latestPNG = nil
+        lock.unlock()
+    }
 }

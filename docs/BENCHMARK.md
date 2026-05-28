@@ -43,7 +43,7 @@ Results land in `benchmarks/results/<timestamp>/report.md` with JSON per variant
 | Task | What it measures |
 |------|------------------|
 | `cold_start` | MCP spawn + `tools/list` (expects 9 OCU tools) |
-| `screenshot_latency` | `get_app_state` capture latency + image payload |
+| `screenshot_latency` | `get_app_state` capture latency + screenshot bytes (inline `image` or `resources/read` on `computer-use://screenshot/latest`) |
 | `textedit_type` | Type unique marker into TextEdit and verify via AppleScript |
 | `policy` | Denylisted password-manager bundle blocked without launching any app |
 

@@ -15,9 +15,12 @@ description: Operate macOS 26+ desktop apps via Cursor Computer Use MCP (9 Codex
 
 ## Setup
 
-Full install, permissions, MCP config, and policy: **[docs/CURSOR.md](../../docs/CURSOR.md)** (canonical).
+1. Install: `open-computer-use install-cursor-mcp` (or enable this plugin’s MCP entry).
+2. Grant Accessibility + Screen Recording to **Open Computer Use.app** (not Terminal/Cursor).
+3. Run: `open-computer-use doctor --cursor`
+4. Optional policy: copy `.cursor/computer-use-policy.example.json` to `.cursor/computer-use-policy.json` in your project.
 
-Tahoe capture troubleshooting: [docs/macOS-26.md](../../docs/macOS-26.md)
+Repository docs: https://github.com/PowerBeef/cursor-computer-use-mcp/blob/main/docs/CURSOR.md
 
 ## Composer workflow
 
@@ -27,18 +30,17 @@ Tahoe capture troubleshooting: [docs/macOS-26.md](../../docs/macOS-26.md)
 4. `get_app_state` again to verify when UI may have changed
 5. Hosts with turn notifications: send `notifications/turn-ended` or run `open-computer-use turn-ended`
 
-Screenshots default to MCP resource `computer-use://screenshot/latest`; use `inline_image: true` on `get_app_state` when the client cannot call `resources/read`.
-
-For rare AppleScript-friendly one-offs (Mail, Finder scripts), use the **shell** — do not expect a dedicated MCP AppleScript tool.
+Screenshots default to MCP resource `computer-use://screenshot/latest`; pass `inline_image: true` on `get_app_state` when the client cannot read resources.
 
 ## Rules
 
 - Enable **`cursor-computer-use`** only (9 tools); disable legacy **`computer-use-mcp`**
 - One clear app per task
-- Never target **Passwords** (`com.apple.Passwords`) or other denylisted apps; password managers blocked by policy
+- Never target **Passwords** (`com.apple.Passwords`) or other denylisted apps
 - Ask before send/purchase/delete/upload actions
 - Prefer `set_value` and keyboard shortcuts over blind coordinate clicks
 
 ## Troubleshooting
 
-See [docs/CURSOR.md](../../docs/CURSOR.md) and [docs/macOS-26.md](../../docs/macOS-26.md).
+- `open-computer-use doctor --cursor` — MCP config, PATH, permissions
+- macOS 26 capture: https://github.com/PowerBeef/cursor-computer-use-mcp/blob/main/docs/macOS-26.md

@@ -75,10 +75,8 @@ public final class StdioMCPServer {
                 VisualCursorSupport.performOnMain {
                     SoftwareCursorOverlay.reset()
                 }
-                service.resetCachedSnapshots()
-                Task {
-                    await SnapshotAXCache.shared.invalidateAll()
-                }
+                ComputerUseService.resetAllSessionCaches()
+                SnapshotAXCache.shared.invalidateAll()
                 return nil
             case "ping":
                 return try encodeJSONRPCResult(id: id, result: [:])

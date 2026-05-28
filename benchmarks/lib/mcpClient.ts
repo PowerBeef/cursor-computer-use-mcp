@@ -46,6 +46,12 @@ export class BenchmarkMcpClient {
 		return result.tools.map((t) => t.name);
 	}
 
+	async readResource(uri: string): Promise<{
+		contents?: Array<{uri?: string; mimeType?: string; blob?: string}>;
+	}> {
+		return this.request('resources/read', {uri});
+	}
+
 	async callTool(name: string, args: Record<string, unknown> = {}): Promise<{
 		result: McpToolResult;
 		metrics: ToolCallRecord;

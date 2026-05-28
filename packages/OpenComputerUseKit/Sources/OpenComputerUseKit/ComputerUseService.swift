@@ -156,6 +156,27 @@ func screenshotPixelToWindowPoint(
     )
 }
 
+func screenshotPixelRectToWindowRect(
+    _ rect: CGRect,
+    screenshotPixelSize: CGSize?,
+    windowBounds: CGRect?
+) -> CGRect {
+    let scale = screenshotPixelScale(
+        screenshotPixelSize: screenshotPixelSize,
+        windowBounds: windowBounds
+    )
+    guard scale.width > 0, scale.height > 0 else {
+        return rect
+    }
+
+    return CGRect(
+        x: rect.origin.x / scale.width,
+        y: rect.origin.y / scale.height,
+        width: rect.width / scale.width,
+        height: rect.height / scale.height
+    )
+}
+
 let nonSettableSetValueErrorMessage = "Cannot set a value for an element that is not settable"
 
 func setValueAttributeIsSettable(result: AXError, settable: Bool, attribute: String) throws -> Bool {
@@ -348,12 +369,32 @@ func shouldPreferContainingWebRowAXClickCandidate(
 }
 
 public final class ComputerUseService {
-    private var snapshotsByApp: [String: AppSnapshot] = [:]
+    private static let instanceLock = NSLock()
+    private nonisolated(unsafe) static let activeInstances = NSHashTable<ComputerUseService>.weakObjects()
 
-    public init() {}
+    private var snapshotsByApp: [String: AppSnapshot] = [:]
+    private var lastEditableInteractionByApp: [String: AXUIElement] = [:]
+
+    public init() {
+        Self.instanceLock.lock()
+        Self.activeInstances.add(self)
+        Self.instanceLock.unlock()
+    }
 
     public func resetCachedSnapshots() {
         snapshotsByApp.removeAll()
+        lastEditableInteractionByApp.removeAll()
+    }
+
+    public static func resetAllSessionCaches() {
+        instanceLock.lock()
+        let instances = activeInstances.allObjects
+        instanceLock.unlock()
+
+        for instance in instances {
+            instance.resetCachedSnapshots()
+        }
+        MCPScreenshotResourceStore.shared.clear()
     }
 
     public func listApps() -> ToolCallResult {
@@ -453,6 +494,7 @@ public final class ComputerUseService {
             }
 
             pulseVisualCursor(at: cursorTarget, clickCount: clickCount, mouseButton: button)
+            promoteTextInputFocus(for: record, snapshot: snapshot)
         } else if let x, let y {
             let screenshotPoint = CGPoint(x: x, y: y)
             let point = screenshotPixelToWindowPointInSnapshot(snapshot: snapshot, point: screenshotPoint)
@@ -615,18 +657,20 @@ public final class ComputerUseService {
 
     public func typeText(app query: String, text: String, includeScreenshot: Bool = false) throws -> ToolCallResult {
         let snapshot = try currentSnapshot(for: query)
-        if snapshot.mode == .fixture {
+        if snapshot.mode == .fixture || shouldUseFixtureBridge(for: query) {
             try FixtureBridge.post(FixtureCommand(kind: "type_text", identifier: "fixture-input", value: text))
             Thread.sleep(forTimeInterval: 0.15)
             return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
-        if try typeTextBySettingFocusedValueIfAvailable(text, in: snapshot) {
+        let focusedElement = resolveFocusedElement(for: snapshot)
+
+        if try typeTextBySettingFocusedValueIfAvailable(text, focusedElement: focusedElement) {
             Thread.sleep(forTimeInterval: 0.1)
             return try actionResult(for: query, includeScreenshot: includeScreenshot)
         }
 
-        guard try canTypeTextUsingKeyboardFallback(in: snapshot) else {
+        guard try canTypeTextUsingKeyboardFallback(focusedElement: focusedElement) else {
             throw ComputerUseError.stateUnavailable("type_text requires a focused editable text element. Click a text entry area first, or use set_value on a settable text element.")
         }
 
@@ -725,6 +769,8 @@ public final class ComputerUseService {
         for key in keys {
             snapshotsByApp[key] = snapshot
         }
+
+        SnapshotAXCache.shared.store(snapshot, for: snapshot.app)
 
         return snapshot
     }
@@ -1288,8 +1334,8 @@ public final class ComputerUseService {
         }
     }
 
-    private func typeTextBySettingFocusedValueIfAvailable(_ text: String, in snapshot: AppSnapshot) throws -> Bool {
-        guard let element = snapshot.focusedElement else {
+    private func typeTextBySettingFocusedValueIfAvailable(_ text: String, focusedElement: AXUIElement?) throws -> Bool {
+        guard let element = focusedElement else {
             return false
         }
 
@@ -1309,8 +1355,8 @@ public final class ComputerUseService {
         }
     }
 
-    private func canTypeTextUsingKeyboardFallback(in snapshot: AppSnapshot) throws -> Bool {
-        guard let element = snapshot.focusedElement else {
+    private func canTypeTextUsingKeyboardFallback(focusedElement: AXUIElement?) throws -> Bool {
+        guard let element = focusedElement else {
             return false
         }
 
@@ -1323,6 +1369,90 @@ public final class ComputerUseService {
             roleDescription: roleDescription,
             isValueSettable: try isSettableForSetValue(element: element, attribute: kAXValueAttribute)
         )
+    }
+
+    private func appCacheKey(for app: RunningAppDescriptor) -> String {
+        (app.bundleIdentifier ?? app.name).lowercased()
+    }
+
+    private func shouldUseFixtureBridge(for query: String) -> Bool {
+        guard let app = try? AppDiscovery.resolve(query) else {
+            return false
+        }
+
+        return app.name == FixtureBridge.appName && (try? FixtureBridge.readState()) != nil
+    }
+
+    private func resolveFocusedElement(for snapshot: AppSnapshot) -> AXUIElement? {
+        if let live = liveFocusedUIElement(for: snapshot.app) {
+            return live
+        }
+
+        if let remembered = lastEditableInteractionByApp[appCacheKey(for: snapshot.app)] {
+            return remembered
+        }
+
+        return snapshot.focusedElement
+    }
+
+    private func liveFocusedUIElement(for app: RunningAppDescriptor) -> AXUIElement? {
+        let appElement = AXUIElementCreateApplication(app.pid)
+        let systemWide = AXUIElementCreateSystemWide()
+
+        var focusedApplication: AXUIElement?
+        var value: CFTypeRef?
+        if AXUIElementCopyAttributeValue(systemWide, kAXFocusedApplicationAttribute as CFString, &value) == .success,
+           let value
+        {
+            focusedApplication = (value as! AXUIElement)
+        }
+
+        if let focusedApplication, pid(of: focusedApplication) == app.pid {
+            if let element = copyAXUIElement(focusedApplication, attribute: kAXFocusedUIElementAttribute) {
+                return element
+            }
+            if let element = copyAXUIElement(systemWide, attribute: kAXFocusedUIElementAttribute) {
+                return element
+            }
+        }
+
+        return copyAXUIElement(appElement, attribute: kAXFocusedUIElementAttribute)
+    }
+
+    private func copyAXUIElement(_ element: AXUIElement, attribute: String) -> AXUIElement? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+              let value
+        else {
+            return nil
+        }
+
+        return (value as! AXUIElement)
+    }
+
+    private func pid(of element: AXUIElement) -> pid_t {
+        var pid: pid_t = 0
+        _ = AXUIElementGetPid(element, &pid)
+        return pid
+    }
+
+    private func promoteTextInputFocus(for record: ElementRecord, snapshot: AppSnapshot) {
+        guard let element = record.element else {
+            return
+        }
+
+        let role = stringValue(of: element, attribute: kAXRoleAttribute)
+        let roleDescription = role.flatMap {
+            stringValue(of: element, attribute: kAXRoleDescriptionAttribute) ?? humanizedRoleDescription(for: $0)
+        }
+        let isValueSettable = (try? isSettableForSetValue(element: element, attribute: kAXValueAttribute)) ?? false
+        guard canUseKeyboardTextFallback(role: role, roleDescription: roleDescription, isValueSettable: isValueSettable) else {
+            return
+        }
+
+        _ = try? activateClickTarget(element: element, availableActions: record.rawActions)
+        lastEditableInteractionByApp[appCacheKey(for: snapshot.app)] = element
+        Thread.sleep(forTimeInterval: 0.05)
     }
 
     private func humanizedRoleDescription(for role: String) -> String {

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 function fail(message) {
   process.stderr.write(`${message}\n`);
@@ -255,11 +257,37 @@ function installClaudeMcp(configPath, projectRoot, serverName, commandName) {
   }
 }
 
+function detectProjectRoot(startDir) {
+  let dir = path.resolve(startDir);
+  while (true) {
+    if (existsSync(path.join(dir, "AGENTS.md")) || existsSync(path.join(dir, ".cursor"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+    dir = parent;
+  }
+}
+
+function projectRootForConfig(configPath) {
+  const configDir = path.dirname(path.resolve(configPath));
+  const start = path.basename(configDir) === ".cursor" ? path.dirname(configDir) : configDir;
+  return detectProjectRoot(start) ?? detectProjectRoot(process.cwd());
+}
+
 function installCursorMcp(configPath, serverName, commandName) {
   const desiredEntry = {
     command: commandName,
     args: ["mcp"],
   };
+  const projectRoot = projectRootForConfig(configPath);
+  if (projectRoot) {
+    desiredEntry.env = {
+      OPEN_COMPUTER_USE_PROJECT_ROOT: projectRoot,
+    };
+  }
   const legacyServerNames = ["open-computer-use", "open-codex-computer-use"];
   const data = readJSONObjectConfig(configPath, `Cursor config ${configPath}`);
   const mcpServers = ensureObjectField(
@@ -276,6 +304,7 @@ function installCursorMcp(configPath, serverName, commandName) {
 
   if (targetMatches && !legacyMatches) {
     process.stdout.write(`Cursor MCP server "${serverName}" is already installed in ${configPath}.\n`);
+    printCursorPostInstallChecklist(configPath, mcpServers, serverName);
     return;
   }
 
@@ -296,10 +325,10 @@ function installCursorMcp(configPath, serverName, commandName) {
     process.stdout.write(`Installed Cursor MCP server "${serverName}" into ${configPath}.\n`);
   }
 
-  printCursorPostInstallChecklist(configPath, mcpServers);
+  printCursorPostInstallChecklist(configPath, mcpServers, serverName);
 }
 
-function printCursorPostInstallChecklist(configPath, mcpServers) {
+export function printCursorPostInstallChecklist(configPath, mcpServers, serverName) {
   const warnings = [];
   if (mcpServers["computer-use-mcp"] != null) {
     warnings.push(
@@ -328,7 +357,7 @@ Post-install checklist:
   }
 
   try {
-    const which = require("node:child_process").execFileSync("/usr/bin/which", ["open-computer-use"], {
+    const which = execFileSync("/usr/bin/which", ["open-computer-use"], {
       encoding: "utf8",
     }).trim();
     if (which) {
@@ -627,4 +656,7 @@ function main(argv) {
   }
 }
 
-main(process.argv.slice(2));
+const scriptPath = fileURLToPath(import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(scriptPath)) {
+  main(process.argv.slice(2));
+}

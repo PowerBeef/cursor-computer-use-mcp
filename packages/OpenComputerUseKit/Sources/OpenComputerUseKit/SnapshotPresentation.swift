@@ -19,7 +19,8 @@ public struct ScreenshotPresentationMetadata: Sendable {
 }
 
 enum SetOfMarkRenderer {
-    static func annotate(pngData: Data, records: [Int: ElementRecord]) -> Data? {
+    static func annotate(pngData: Data, records: [Int: ElementRecord], captureScale: CGFloat = 1) -> Data? {
+        let scale = max(captureScale, 0.01)
         guard let source = NSImage(data: pngData) else {
             return nil
         }
@@ -44,10 +45,10 @@ enum SetOfMarkRenderer {
             }
 
             let rect = NSRect(
-                x: frame.origin.x,
-                y: size.height - frame.origin.y - frame.height,
-                width: frame.width,
-                height: frame.height
+                x: frame.origin.x * scale,
+                y: size.height - (frame.origin.y + frame.height) * scale,
+                width: frame.width * scale,
+                height: frame.height * scale
             )
 
             let color = markColor(for: record.index)

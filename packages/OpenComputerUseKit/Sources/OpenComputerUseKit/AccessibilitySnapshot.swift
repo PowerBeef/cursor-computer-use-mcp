@@ -203,13 +203,31 @@ enum SnapshotBuilder {
             renderer.render(menuBar, path: [app.name, "menuBar"])
         }
 
+        let captureMetadata = screenshotMetadata(for: screenshotPNGData)
+        let screenshotPixelSize = captureMetadata.map {
+            CGSize(width: $0.pixelWidth, height: $0.pixelHeight)
+        }
+
         if includeOCR, let screenshotPNGData {
-            let observations = OCRPipeline.recognize(pngData: screenshotPNGData)
+            let observations = OCRPipeline.recognize(pngData: screenshotPNGData).map { observation in
+                OCRTextObservation(
+                    text: observation.text,
+                    localFrame: screenshotPixelRectToWindowRect(
+                        observation.localFrame,
+                        screenshotPixelSize: screenshotPixelSize,
+                        windowBounds: windowBounds
+                    )
+                )
+            }
             renderer.appendOCR(observations: observations)
         }
 
         let annotatedPNG = screenshotPNGData.flatMap {
-            SetOfMarkRenderer.annotate(pngData: $0, records: renderer.records)
+            SetOfMarkRenderer.annotate(
+                pngData: $0,
+                records: renderer.records,
+                captureScale: captureMetadata?.captureScale ?? 1
+            )
         } ?? screenshotPNGData
         let presentationPNG = annotatedPNG ?? screenshotPNGData
 
@@ -220,7 +238,7 @@ enum SnapshotBuilder {
             targetWindowID: windowCapture.windowID,
             targetWindowLayer: windowCapture.layer,
             screenshotPNGData: presentationPNG,
-            screenshotMetadata: screenshotMetadata(for: presentationPNG),
+            screenshotMetadata: screenshotMetadata(for: presentationPNG) ?? captureMetadata,
             mode: .accessibility,
             treeLines: renderer.lines,
             identifierIndexLines: renderer.identifierIndexLines,

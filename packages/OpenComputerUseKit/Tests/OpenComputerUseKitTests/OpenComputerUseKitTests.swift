@@ -508,6 +508,102 @@ final class OpenComputerUseKitTests: XCTestCase {
         XCTAssertTrue(resources.contains { ($0["uri"] as? String)?.hasPrefix("computer-use://screenshot/") == true })
     }
 
+    func testMCPResourcesReadReturnsStoredPNG() throws {
+        let png = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00])
+        let uri = MCPScreenshotResourceStore.shared.store(pngData: png)
+        let server = StdioMCPServer()
+        let response = try XCTUnwrap(
+            server.handle(line: #"{"jsonrpc":"2.0","id":4,"method":"resources/read","params":{"uri":"computer-use://screenshot/latest"}}"#)
+        )
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(response.utf8)) as? [String: Any])
+        let result = try XCTUnwrap(payload["result"] as? [String: Any])
+        let contents = try XCTUnwrap(result["contents"] as? [[String: Any]])
+        let blob = try XCTUnwrap(contents.first?["blob"] as? String)
+        XCTAssertEqual(uri, "computer-use://screenshot/latest")
+        XCTAssertEqual(Data(base64Encoded: blob), png)
+    }
+
+    func testMCPTurnEndedClearsScreenshotResource() throws {
+        _ = MCPScreenshotResourceStore.shared.store(pngData: Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
+        let server = StdioMCPServer(service: ComputerUseService())
+        _ = server.handle(line: #"{"jsonrpc":"2.0","method":"notifications/turn-ended","params":{"type":"agent-turn-complete"}}"#)
+        XCTAssertNil(MCPScreenshotResourceStore.shared.pngData(for: "computer-use://screenshot/latest"))
+    }
+
+    func testScreenshotPixelRectToWindowRectConvertsPixelFrames() {
+        let rect = screenshotPixelRectToWindowRect(
+            CGRect(x: 100, y: 200, width: 40, height: 20),
+            screenshotPixelSize: CGSize(width: 2048, height: 1266),
+            windowBounds: CGRect(x: 0, y: 0, width: 1024, height: 633)
+        )
+
+        XCTAssertEqual(rect.origin.x, 50, accuracy: 0.0001)
+        XCTAssertEqual(rect.origin.y, 100, accuracy: 0.0001)
+        XCTAssertEqual(rect.width, 20, accuracy: 0.0001)
+        XCTAssertEqual(rect.height, 10, accuracy: 0.0001)
+    }
+
+    func testSetOfMarkAnnotateScalesWindowRectsForRetinaCapture() throws {
+        let size = NSSize(width: 120, height: 80)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(origin: .zero, size: size).fill()
+        image.unlockFocus()
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:])
+        else {
+            XCTFail("failed to build fixture png")
+            return
+        }
+
+        let record = ElementRecord(
+            index: 1,
+            stableID: "id:scaled",
+            identifier: nil,
+            element: nil,
+            localFrame: CGRect(x: 10, y: 10, width: 20, height: 10),
+            rawActions: [],
+            prettyActions: []
+        )
+
+        let unscaled = try XCTUnwrap(SetOfMarkRenderer.annotate(pngData: png, records: [1: record], captureScale: 1))
+        let scaled = try XCTUnwrap(SetOfMarkRenderer.annotate(pngData: png, records: [1: record], captureScale: 2))
+        XCTAssertGreaterThan(scaled.count, unscaled.count)
+    }
+
+    func testSnapshotAXCacheStoresAndInvalidates() throws {
+        let app = RunningAppDescriptor(
+            name: "CacheTest",
+            bundleIdentifier: "com.example.cache",
+            pid: 42,
+            runningApplication: NSRunningApplication.current
+        )
+        let snapshot = AppSnapshot(
+            app: app,
+            windowTitle: nil,
+            windowBounds: nil,
+            targetWindowID: nil,
+            targetWindowLayer: nil,
+            screenshotPNGData: nil,
+            screenshotMetadata: nil,
+            mode: .accessibility,
+            treeLines: [],
+            identifierIndexLines: [],
+            focusedSummary: nil,
+            focusedElement: nil,
+            selectedText: nil,
+            truncationFooter: nil,
+            elements: [:]
+        )
+
+        SnapshotAXCache.shared.store(snapshot, for: app)
+        XCTAssertNotNil(SnapshotAXCache.shared.cachedSnapshot(for: app))
+        SnapshotAXCache.shared.invalidateAll()
+        XCTAssertNil(SnapshotAXCache.shared.cachedSnapshot(for: app))
+    }
+
     func testSetOfMarkAnnotateEmbedsNumberedOverlay() throws {
         let size = NSSize(width: 120, height: 80)
         let image = NSImage(size: size)

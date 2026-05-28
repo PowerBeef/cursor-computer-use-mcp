@@ -179,6 +179,8 @@ private final class MacOSAppAgentRuntime: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 resetOpenComputerUseVisualCursor()
             }
+            ComputerUseService.resetAllSessionCaches()
+            SnapshotAXCache.shared.invalidateAll()
         }
 
         do {

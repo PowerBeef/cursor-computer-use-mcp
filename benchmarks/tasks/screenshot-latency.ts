@@ -16,8 +16,18 @@ export async function runScreenshotLatencyTask(variant: VariantId, trial: number
 			const {metrics} = await client.callComputer('get_screenshot');
 			calls.push(metrics);
 		} else {
-			const {metrics} = await client.callTool('get_app_state', {app: 'TextEdit'});
+			const {metrics, result} = await client.callTool('get_app_state', {app: 'TextEdit'});
 			calls.push(metrics);
+			if (metrics.imageBytes === 0) {
+				const text = result.content?.find((block) => block.type === 'text')?.text ?? '';
+				if (text.includes('computer-use://screenshot/latest')) {
+					const resource = await client.readResource('computer-use://screenshot/latest');
+					const blob = resource.contents?.[0]?.blob;
+					if (blob) {
+						metrics.imageBytes = Buffer.byteLength(blob, 'utf8');
+					}
+				}
+			}
 		}
 
 		const success = !calls.some((c) => c.isError) && calls[0]!.imageBytes > 0;

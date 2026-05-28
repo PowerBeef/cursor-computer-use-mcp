@@ -33,6 +33,8 @@ open-computer-use install-cursor-mcp --scope project
 
 Or copy [`.cursor/mcp.json`](../.cursor/mcp.json) into your project.
 
+Project installs set `OPEN_COMPUTER_USE_PROJECT_ROOT` in the MCP server `env` so `.cursor/computer-use-policy.json` and project `.cursor/mcp.json` resolve when Cursor’s cwd is not the repo root.
+
 4. In **Cursor → Settings → MCP**, enable `cursor-computer-use`. You should see **9 tools** (`list_apps`, `get_app_state`, `click`, …), not a single `computer` tool.
 
 5. Optional policy file:
