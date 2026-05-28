@@ -49,7 +49,7 @@ test("cursor-mcp idempotent install prints checklist", () => {
   const output = execFileSync(
     process.execPath,
     [scriptPath, "cursor-mcp", configPath, "cursor-computer-use", "open-computer-use"],
-    { encoding: "utf8" },
+    { encoding: "utf8", cwd: dir },
   );
   assert.match(output, /already installed/);
   assert.match(output, /Post-install checklist/);
