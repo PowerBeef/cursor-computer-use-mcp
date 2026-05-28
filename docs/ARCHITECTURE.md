@@ -92,7 +92,7 @@ This repository is a local `computer-use` project. The main line is a Swift macO
 - Open source does not replicate official caller signing, private IPC, full overlay choreography, or plugin self-install.
 - Official bundled `computer-use` may be killed by launch constraints; use normal Codex chains for official tools, `open-computer-use mcp` for this project.
 - Permission onboarding and visual cursor are close but not identical to official embedded choreography.
-- Screenshots: ScreenCaptureKit → MCP `image` PNG (size-capped), not repo temp files; coordinate tools map pixel size to window points.
+- Screenshots: ScreenCaptureKit → MCP resource `computer-use://screenshot/latest` (size-capped PNG) by default; pass `inline_image: true` to `get_app_state` to embed an inline `image` content block. PNG bytes live in memory, not repo temp files; coordinate tools map pixel size to window points.
 - Session state is in-process (latest snapshot + element index per app).
 
 ## Verification

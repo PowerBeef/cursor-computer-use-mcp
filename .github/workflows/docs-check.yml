@@ -1,0 +1,32 @@
+name: docs-check
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - "scripts/check-docs.sh"
+      - ".github/workflows/docs-check.yml"
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - "scripts/check-docs.sh"
+      - ".github/workflows/docs-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Documentation link check
+        run: make check-docs

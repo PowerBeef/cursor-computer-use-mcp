@@ -1,0 +1,42 @@
+name: repo-hygiene
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: "24"
+
+      - name: Check required hygiene files
+        run: ./scripts/check-repo-hygiene.sh
+
+      - name: Check GitHub Action SHA pinning
+        run: ./scripts/check-action-pinning.sh
+
+      - name: Syntax-check shell scripts
+        run: |
+          while IFS= read -r file; do
+            bash -n "$file"
+          done < <(find scripts -type f -name '*.sh' | sort)
+
+      - name: Syntax-check Node scripts
+        run: |
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find scripts -type f -name '*.mjs' | sort)

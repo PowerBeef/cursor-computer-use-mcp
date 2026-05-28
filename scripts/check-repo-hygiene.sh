@@ -12,7 +12,6 @@ required_files=(
   "CONTRIBUTING.md"
   "SECURITY.md"
   ".github/PULL_REQUEST_TEMPLATE.md"
-  ".github/dependency-review-config.yml"
   ".github/ISSUE_TEMPLATE/bug_report.yml"
   ".github/ISSUE_TEMPLATE/feature_request.yml"
   ".github/ISSUE_TEMPLATE/config.yml"
@@ -20,7 +19,6 @@ required_files=(
   ".github/workflows/docs-check.yml"
   ".github/workflows/repo-hygiene.yml"
   ".github/workflows/release.yml"
-  ".github/workflows/supply-chain-security.yml"
   ".markdownlint.json"
   "scripts/check-action-pinning.sh"
 )
