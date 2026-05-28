@@ -140,7 +140,7 @@ export class BenchmarkMcpClient {
 		await this.request('initialize', {
 			protocolVersion: '2024-11-05',
 			capabilities: {},
-			clientInfo: {name: 'cursor-computer-use-benchmark', version: '1.0.0'},
+			clientInfo: {name: 'cairn-benchmark', version: '1.0.0'},
 		});
 		this.send({jsonrpc: '2.0', method: 'notifications/initialized'});
 		this.startTime = performance.now() - spawnStart;

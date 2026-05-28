@@ -4,15 +4,15 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 config_helper="${script_dir}/install-config-helper.mjs"
-server_name="cursor-computer-use"
-command_name="open-computer-use"
+server_name="cairn"
+command_name="cairn"
 scope="user"
 
 usage() {
   cat <<'EOF'
 Usage: ./scripts/install-cursor-mcp.sh [--scope user|project]
 
-Install the open-computer-use stdio MCP entry into Cursor MCP config.
+Install the cairn stdio MCP entry into Cursor MCP config.
 Defaults to user scope (~/.cursor/mcp.json).
 Project scope writes ./.cursor/mcp.json for the current repository.
 Set CURSOR_MCP_CONFIG_PATH to override the target file directly.
@@ -61,4 +61,4 @@ config_path="${CURSOR_MCP_CONFIG_PATH:-${default_config_path}}"
 node "${config_helper}" cursor-mcp "${config_path}" "${server_name}" "${command_name}"
 
 echo ""
-echo "Next: open-computer-use doctor --cursor"
+echo "Next: cairn doctor --cursor"

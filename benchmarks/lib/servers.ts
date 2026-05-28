@@ -4,10 +4,10 @@ import {repoRoot} from './paths.js';
 
 const root = repoRoot();
 
-/** Native open-computer-use MCP (9 Codex-style tools). */
+/** Native cairn MCP (9 Codex-style tools). */
 export const OCU_SERVER: ServerConfig = {
 	id: 'ocu',
-	command: process.env.BENCHMARK_OCU_COMMAND || 'open-computer-use',
+	command: process.env.BENCHMARK_OCU_COMMAND || 'cairn',
 	args: ['mcp'],
 	cwd: root,
 };
@@ -29,6 +29,6 @@ export function resolveOcuCommandPath(): string | undefined {
 		return process.env.BENCHMARK_OCU_COMMAND;
 	}
 
-	const bundled = resolve(root, 'artifacts/npm/open-computer-use/bin/open-computer-use');
+	const bundled = resolve(root, 'artifacts/npm/cairn/bin/cairn');
 	return bundled;
 }

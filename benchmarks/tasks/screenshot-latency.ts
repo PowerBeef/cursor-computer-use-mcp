@@ -20,8 +20,8 @@ export async function runScreenshotLatencyTask(variant: VariantId, trial: number
 			calls.push(metrics);
 			if (metrics.imageBytes === 0) {
 				const text = result.content?.find((block) => block.type === 'text')?.text ?? '';
-				if (text.includes('computer-use://screenshot/latest')) {
-					const resource = await client.readResource('computer-use://screenshot/latest');
+				if (text.includes('cairn://screenshot/latest')) {
+					const resource = await client.readResource('cairn://screenshot/latest');
 					const blob = resource.contents?.[0]?.blob;
 					if (blob) {
 						metrics.imageBytes = Buffer.byteLength(blob, 'utf8');

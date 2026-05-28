@@ -1,12 +1,12 @@
 {
-  "name": "cursor-computer-use",
+  "name": "cairn",
   "version": "0.1.51",
   "description": "Native macOS Computer Use MCP for Cursor (9 tools, Set-of-Mark screenshots, policy).",
   "author": {
     "name": "PowerBeef"
   },
-  "homepage": "https://github.com/PowerBeef/cursor-computer-use-mcp",
-  "repository": "https://github.com/PowerBeef/cursor-computer-use-mcp",
+  "homepage": "https://github.com/PowerBeef/cairn-computer-use",
+  "repository": "https://github.com/PowerBeef/cairn-computer-use",
   "license": "MIT",
   "keywords": [
     "computer-use",
@@ -17,12 +17,12 @@
   ],
   "mcpServers": "./.mcp.json",
   "skills": [
-    "./skills/cursor-computer-use"
+    "./skills/cairn"
   ],
   "interface": {
-    "displayName": "Cursor Computer Use",
-    "shortDescription": "Control native macOS apps from Cursor with accessibility + annotated screenshots",
-    "longDescription": "Cursor Computer Use connects Cursor to the open-computer-use native MCP server. It exposes nine desktop tools (list_apps, get_app_state, click, scroll, type_text, and more), Set-of-Mark screenshot overlays, optional Apple Vision OCR, and policy files to block password managers.",
+    "displayName": "Cairn",
+    "shortDescription": "Native macOS control for Cursor agents — accessibility tree, Set-of-Mark screenshots, and policy.",
+    "longDescription": "Cairn connects Cursor to a native macOS MCP server. It exposes nine desktop tools (list_apps, get_app_state, click, scroll, type_text, and more), Set-of-Mark screenshot overlays, optional Apple Vision OCR, and policy files to block password managers. Permissions live on Cairn.app, so Cursor never needs direct Accessibility access.",
     "developerName": "PowerBeef",
     "category": "Productivity",
     "capabilities": [
@@ -30,7 +30,7 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/PowerBeef/cursor-computer-use-mcp",
+    "websiteURL": "https://github.com/PowerBeef/cairn-computer-use",
     "defaultPrompt": [
       "List running apps and capture get_app_state for the target app before clicking",
       "Use element_index from the accessibility tree instead of coordinate clicks when possible",

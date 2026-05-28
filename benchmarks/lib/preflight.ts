@@ -12,7 +12,7 @@ export function runPreflight(): {ok: boolean; messages: string[]} {
 		ok = false;
 	}
 
-	const ocuCommand = process.env.BENCHMARK_OCU_COMMAND || 'open-computer-use';
+	const ocuCommand = process.env.BENCHMARK_OCU_COMMAND || 'cairn';
 	try {
 		execSync(`command -v ${ocuCommand}`, {stdio: 'ignore'});
 		messages.push(`OK: ${ocuCommand} on PATH`);
@@ -21,7 +21,7 @@ export function runPreflight(): {ok: boolean; messages: string[]} {
 		if (bundled && existsSync(bundled)) {
 			messages.push(`WARN: ${ocuCommand} not on PATH; set BENCHMARK_OCU_COMMAND=${bundled}`);
 		} else {
-			messages.push(`ERROR: ${ocuCommand} not found (run npm run npm:build or npm i -g open-computer-use)`);
+			messages.push(`ERROR: ${ocuCommand} not found (run npm run npm:build or npm i -g cairn)`);
 			ok = false;
 		}
 	}
@@ -39,7 +39,7 @@ export function getEnvironmentMetadata(): Record<string, string> {
 		platform: process.platform,
 		arch: process.arch,
 		node: process.version,
-		ocuCommand: process.env.BENCHMARK_OCU_COMMAND || 'open-computer-use',
+		ocuCommand: process.env.BENCHMARK_OCU_COMMAND || 'cairn',
 		legacyEnabled: process.env.BENCHMARK_LEGACY === '1' ? 'yes' : 'no',
 	};
 }

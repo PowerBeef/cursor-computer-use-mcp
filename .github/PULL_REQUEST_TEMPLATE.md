@@ -11,13 +11,13 @@
 - [ ] `make check-docs`
 - [ ] `make check-repo`
 - [ ] `node --test scripts/install-config-helper.test.mjs` (if install scripts changed)
-- [ ] `BENCHMARK_TRIALS=1 OPEN_COMPUTER_USE_DISABLE_APP_AGENT_PROXY=1 npm run benchmark` (if MCP surface changed)
+- [ ] `BENCHMARK_TRIALS=1 CAIRN_DISABLE_APP_AGENT_PROXY=1 npm run benchmark` (if MCP surface changed)
 
 ## Doc / history sync
 
 - [ ] Updated relevant `docs/` files (canonical: `docs/CURSOR.md`, `docs/ARCHITECTURE.md`).
 - [ ] Added a `docs/histories/YYYY-MM/<slug>.md` entry when [HISTORY_GUIDE.md](../docs/HISTORY_GUIDE.md) calls for it.
-- [ ] Skill / plugin manifests stay in sync with `OpenComputerUseVersion.swift`.
+- [ ] Skill / plugin manifests stay in sync with `CairnVersion.swift`.
 
 ## Notes for reviewers
 

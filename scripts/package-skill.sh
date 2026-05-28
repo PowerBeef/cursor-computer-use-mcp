@@ -98,10 +98,10 @@ fi
 rm -rf "${repo_root}/dist/skills"
 mkdir -p "${repo_root}/dist/skills"
 
-package_skill "open-computer-use"
-validate_skill_zip "open-computer-use"
-package_skill "cursor-computer-use"
-validate_skill_zip "cursor-computer-use"
+package_skill "cairn"
+validate_skill_zip "cairn"
+package_skill "cairn"
+validate_skill_zip "cairn"
 
 manifest_path="${repo_root}/dist/skills/package-manifest.json"
 node - "${manifest_path}" <<'NODE'
@@ -111,7 +111,7 @@ const path = require("path");
 
 const manifestPath = process.argv[2];
 const distDir = path.dirname(manifestPath);
-const skills = ["open-computer-use", "cursor-computer-use"];
+const skills = ["cairn", "cairn"];
 const payload = { generatedAtUtc: new Date().toISOString(), skills: {} };
 
 for (const name of skills) {

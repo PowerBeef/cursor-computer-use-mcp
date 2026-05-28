@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "cursor-computer-use": {
-      "command": "open-computer-use",
-      "args": ["mcp"]
-    }
-  }
-}

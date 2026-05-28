@@ -285,10 +285,10 @@ function installCursorMcp(configPath, serverName, commandName) {
   const projectRoot = projectRootForConfig(configPath);
   if (projectRoot) {
     desiredEntry.env = {
-      OPEN_COMPUTER_USE_PROJECT_ROOT: projectRoot,
+      CAIRN_PROJECT_ROOT: projectRoot,
     };
   }
-  const legacyServerNames = ["open-computer-use", "open-codex-computer-use"];
+  const legacyServerNames = ["cairn", "open-codex-computer-use"];
   const data = readJSONObjectConfig(configPath, `Cursor config ${configPath}`);
   const mcpServers = ensureObjectField(
     data,
@@ -332,7 +332,7 @@ export function printCursorPostInstallChecklist(configPath, mcpServers, serverNa
   const warnings = [];
   if (mcpServers["computer-use-mcp"] != null) {
     warnings.push(
-      "Disable legacy server computer-use-mcp (single computer tool). Enable only cursor-computer-use (9 tools).",
+      "Disable legacy server computer-use-mcp (single computer tool). Enable only cairn (9 tools).",
     );
   }
 
@@ -346,10 +346,10 @@ export function printCursorPostInstallChecklist(configPath, mcpServers, serverNa
   process.stdout.write(`
 Post-install checklist:
   1. Cursor → Settings → MCP → enable "${serverName}" (9 tools: list_apps, get_app_state, click, …)
-  2. Run: open-computer-use doctor --cursor
-  3. Grant Accessibility + Screen Recording to Open Computer Use.app (not Terminal/Cursor)
+  2. Run: cairn doctor --cursor
+  3. Grant Accessibility + Screen Recording to Cairn.app (not Terminal/Cursor)
   4. Disable legacy computer-use-mcp if still listed
-  5. Optional policy: cp .cursor/computer-use-policy.example.json .cursor/computer-use-policy.json
+  5. Optional policy: cp .cursor/cairn-policy.example.json .cursor/cairn-policy.json
 `);
 
   if (warnings.length > 0) {
@@ -357,15 +357,15 @@ Post-install checklist:
   }
 
   try {
-    const which = execFileSync("/usr/bin/which", ["open-computer-use"], {
+    const which = execFileSync("/usr/bin/which", ["cairn"], {
       encoding: "utf8",
     }).trim();
     if (which) {
-      process.stdout.write(`PATH: open-computer-use → ${which}\n`);
+      process.stdout.write(`PATH: cairn → ${which}\n`);
     }
   } catch {
     process.stdout.write(
-      "PATH: open-computer-use not found (required for Cursor Automations). Install via npm run npm:build or npm install -g open-computer-use.\n",
+      "PATH: cairn not found (required for Cursor Automations). Install via npm run npm:build or npm install -g cairn-computer-use.\n",
     );
   }
 }
@@ -553,7 +553,7 @@ function installCodexPluginConfig(configPath, repoRoot, marketplaceName, pluginN
     {
       removeHeaders: [
         'mcp_servers."open-codex-computer-use"',
-        'mcp_servers."open-computer-use"',
+        'mcp_servers."cairn"',
       ],
       upserts: [
         {

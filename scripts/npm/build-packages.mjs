@@ -19,12 +19,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
 const defaultOutDir = path.join(repoRoot, "dist", "npm");
-const appBundleName = "Open Computer Use.app";
-const appExecutableName = "OpenComputerUse";
+const appBundleName = "Cairn.app";
+const appExecutableName = "Cairn";
 const metaPackageNames = [
-  "open-computer-use",
-  "open-computer-use-mcp",
-  "open-codex-computer-use-mcp",
+  "cairn-computer-use",
+  "cairn-mcp",
 ];
 const runtimeTargets = [
   {
@@ -172,7 +171,7 @@ function removeJunkFiles(targetPath) {
 }
 
 function ensureBuilt(configuration, arch) {
-  run(path.join(repoRoot, "scripts", "build-open-computer-use-app.sh"), [
+  run(path.join(repoRoot, "scripts", "build-cairn-app.sh"), [
     "--configuration",
     configuration,
     "--arch",
@@ -232,11 +231,11 @@ const installCommands = new Map([
 ]);
 
 function printLauncherHelp() {
-  console.log(\`Open Computer Use
+  console.log(\`Cairn
 
 Usage:
-  open-computer-use [command] [options]
-  open-computer-use
+  cairn [command] [options]
+  cairn
 
 Commands:
   mcp                  Start the stdio MCP server.
@@ -260,7 +259,7 @@ Global options:
 
 Notes:
   This npm package bundles native runtimes for supported platforms and selects the current os-arch at launch.
-  Use 'open-computer-use help <command>' for command-specific help.\`);
+  Use 'cairn help <command>' for command-specific help.\`);
 }
 
 function printInstallHelp(scriptName, usage) {
@@ -268,7 +267,7 @@ function printInstallHelp(scriptName, usage) {
   \${usage}
 
 This helper updates a local MCP or plugin config to run:
-  open-computer-use mcp
+  cairn mcp
 
 Script:
   \${scriptName}\`);
@@ -305,7 +304,7 @@ function spawnAndExit(executable, executableArgs) {
 
 function runInstallCommand(scriptName, scriptArgs) {
   if (process.platform === "win32") {
-    fail(\`\${command} currently requires a POSIX shell. Configure your MCP client with command "open-computer-use" and args ["mcp"] on Windows.\`);
+    fail(\`\${command} currently requires a POSIX shell. Configure your MCP client with command "cairn" and args ["mcp"] on Windows.\`);
   }
 
   const scriptPath = path.join(packageRoot, "scripts", scriptName);
@@ -329,7 +328,7 @@ function resolveNativeExecutable() {
     fail(\`Missing bundled native runtime for \${platformKey} at \${executablePath}.
 
 Reinstall with:
-  npm install -g open-computer-use\`);
+  npm install -g cairn\`);
   }
 
   return executablePath;
@@ -341,32 +340,32 @@ if (command === "-h" || command === "--help" || (command === "help" && args.leng
 }
 
 if (command === "help" && args[1] === "install-codex-plugin") {
-  printInstallHelp("install-codex-plugin.sh", "open-computer-use install-codex-plugin");
+  printInstallHelp("install-codex-plugin.sh", "cairn install-codex-plugin");
   process.exit(0);
 }
 
 if (command === "help" && args[1] === "install-codex-mcp") {
-  printInstallHelp("install-codex-mcp.sh", "open-computer-use install-codex-mcp");
+  printInstallHelp("install-codex-mcp.sh", "cairn install-codex-mcp");
   process.exit(0);
 }
 
 if (command === "help" && args[1] === "install-gemini-mcp") {
-  printInstallHelp("install-gemini-mcp.sh", "open-computer-use install-gemini-mcp [--scope project|user]");
+  printInstallHelp("install-gemini-mcp.sh", "cairn install-gemini-mcp [--scope project|user]");
   process.exit(0);
 }
 
 if (command === "help" && args[1] === "install-cursor-mcp") {
-  printInstallHelp("install-cursor-mcp.sh", "open-computer-use install-cursor-mcp [--scope user|project]");
+  printInstallHelp("install-cursor-mcp.sh", "cairn install-cursor-mcp [--scope user|project]");
   process.exit(0);
 }
 
 if (command === "help" && args[1] === "install-opencode-mcp") {
-  printInstallHelp("install-opencode-mcp.sh", "open-computer-use install-opencode-mcp");
+  printInstallHelp("install-opencode-mcp.sh", "cairn install-opencode-mcp");
   process.exit(0);
 }
 
 if (command === "help" && (args[1] === "install-claude-mcp" || args[1] === "install-clauce-mcp")) {
-  printInstallHelp("install-claude-mcp.sh", "open-computer-use install-claude-mcp");
+  printInstallHelp("install-claude-mcp.sh", "cairn install-claude-mcp");
   process.exit(0);
 }
 
@@ -383,8 +382,8 @@ function renderPostinstall(packageName, version) {
   return `#!/usr/bin/env node
 const mcpConfig = ${JSON.stringify({
   mcpServers: {
-    "open-computer-use": {
-      command: "open-computer-use",
+    "cairn": {
+      command: "cairn",
       args: ["mcp"],
     },
   },
@@ -393,13 +392,13 @@ const lines = [
   "",
   "Installed ${packageName}@${version}.",
   "Package: https://www.npmjs.com/package/${packageName}",
-  "Commands: open-computer-use, open-computer-use-mcp, open-codex-computer-use-mcp",
+  "Commands: cairn, cairn-mcp",
   "Native runtime will be selected from bundled artifacts for " + process.platform + "-" + process.arch + ".",
   "",
   "Next:",
-  "1. Run open-computer-use --version",
+  "1. Run cairn --version",
   "2. Add the MCP config below to your host client",
-  "3. On macOS, run open-computer-use doctor and grant Accessibility / Screen Recording if prompted",
+  "3. On macOS, run cairn doctor and grant Accessibility / Screen Recording if prompted",
   "",
   "MCP config:",
   JSON.stringify(mcpConfig, null, 2),
@@ -414,7 +413,7 @@ for (const line of lines) {
 function renderReadme(packageName, version) {
   return `# ${packageName}
 
-Cross-platform npm distribution for the open-source **Open Computer Use** MCP server.
+Cross-platform npm distribution for **Cairn** — native macOS control for AI agents through MCP. Includes Linux and Windows runtimes derived from the upstream open-codex-computer-use project.
 
 This package bundles native runtimes for these supported platforms and lets the Node launcher choose the current \`process.platform\` / \`process.arch\` pair:
 
@@ -422,9 +421,8 @@ ${runtimeTargets.map((runtimeTarget) => `- \`${runtimeTarget.os}-${runtimeTarget
 
 Global command aliases:
 
-- \`open-computer-use\`
-- \`open-computer-use-mcp\`
-- \`open-codex-computer-use-mcp\`
+- \`cairn\`
+- \`cairn-mcp\`
 
 ## Install
 
@@ -441,8 +439,8 @@ If your MCP client accepts a stdio-style \`mcpServers\` JSON config, this is the
 \`\`\`json
 {
   "mcpServers": {
-    "open-computer-use": {
-      "command": "open-computer-use",
+    "cairn": {
+      "command": "cairn",
       "args": ["mcp"]
     }
   }
@@ -454,46 +452,49 @@ Package page: https://www.npmjs.com/package/${packageName}
 ## Use
 
 \`\`\`bash
-open-computer-use --version
-open-computer-use --help
-open-computer-use mcp
-open-computer-use call list_apps
+cairn --version
+cairn --help
+cairn mcp
+cairn call list_apps
 
 # macOS permission check and onboarding
-open-computer-use doctor
+cairn doctor
 
 # Installer helpers for MCP-capable CLIs
-open-computer-use install-claude-mcp
-open-computer-use install-gemini-mcp
-open-computer-use install-gemini-mcp --scope user
-open-computer-use install-cursor-mcp
-open-computer-use install-cursor-mcp --scope project
-open-computer-use install-codex-mcp
-open-computer-use install-opencode-mcp
-open-computer-use install-codex-plugin
+cairn install-claude-mcp
+cairn install-gemini-mcp
+cairn install-gemini-mcp --scope user
+cairn install-cursor-mcp
+cairn install-cursor-mcp --scope project
+cairn install-codex-mcp
+cairn install-opencode-mcp
+cairn install-codex-plugin
 \`\`\`
 
 ## Notes
 
 - Version: \`${version}\`
 - Supported npm platforms: \`darwin-arm64\`, \`darwin-x64\`, \`linux-arm64\`, \`linux-x64\`, \`win32-arm64\`, \`win32-x64\`
-- macOS bundled \`.app\` requires **macOS 26 (Tahoe)+**, plus \`Accessibility\` and \`Screen Recording\` permissions granted to Open Computer Use.app.
+- macOS bundled \`.app\` requires **macOS 26 (Tahoe)+**, plus \`Accessibility\` and \`Screen Recording\` permissions granted to Cairn.app.
 - Linux requires a signed-in desktop session with AT-SPI2 / D-Bus accessibility available for real app control.
 - Windows requires a signed-in desktop session for UI Automation access.
 
-Source repository: https://github.com/iFurySt/open-codex-computer-use
+Source repository: https://github.com/PowerBeef/cairn-computer-use
+Upstream attribution: https://github.com/iFurySt/open-codex-computer-use
 `;
 }
 
 function packageKeywords(extraKeywords = []) {
   return [
+    "cairn",
     "computer-use",
-    "codex",
     "mcp",
     "macos",
     "linux",
     "windows",
     "automation",
+    "cursor",
+    "accessibility",
     ...extraKeywords,
   ];
 }
@@ -502,15 +503,15 @@ function renderMetaPackageJson(packageName, version) {
   return {
     name: packageName,
     version,
-    description: "Cross-platform Computer Use MCP server launcher. After install, configure open-computer-use mcp.",
+    description: "Cairn — native macOS control for AI agents through MCP. After install, configure cairn mcp.",
     license: "MIT",
-    homepage: "https://github.com/iFurySt/open-codex-computer-use",
+    homepage: "https://github.com/PowerBeef/cairn-computer-use",
     repository: {
       type: "git",
-      url: "git+https://github.com/iFurySt/open-codex-computer-use.git",
+      url: "git+https://github.com/PowerBeef/cairn-computer-use.git",
     },
     bugs: {
-      url: "https://github.com/iFurySt/open-codex-computer-use/issues",
+      url: "https://github.com/PowerBeef/cairn-computer-use/issues",
     },
     keywords: packageKeywords(),
     preferGlobal: true,
@@ -518,9 +519,8 @@ function renderMetaPackageJson(packageName, version) {
       access: "public",
     },
     bin: {
-      "open-computer-use": "bin/open-computer-use",
-      "open-computer-use-mcp": "bin/open-computer-use-mcp",
-      "open-codex-computer-use-mcp": "bin/open-codex-computer-use-mcp",
+      "cairn": "bin/cairn",
+      "cairn-mcp": "bin/cairn-mcp",
     },
     scripts: {
       postinstall: "node ./scripts/postinstall.mjs",
@@ -528,13 +528,13 @@ function renderMetaPackageJson(packageName, version) {
     files: [
       ".agents/plugins/marketplace.json",
       "bin/",
-      "dist/Open Computer Use.app/",
+      "dist/Cairn.app/",
       "dist/linux/",
       "dist/windows/",
-      "plugins/open-computer-use/.codex-plugin/",
-      "plugins/open-computer-use/.mcp.json",
-      "plugins/open-computer-use/assets/",
-      "plugins/open-computer-use/scripts/",
+      "plugins/cairn/.codex-plugin/",
+      "plugins/cairn/.mcp.json",
+      "plugins/cairn/assets/",
+      "plugins/cairn/scripts/",
       "scripts/install-claude-mcp.sh",
       "scripts/install-gemini-mcp.sh",
       "scripts/install-cursor-mcp.sh",
@@ -612,7 +612,7 @@ function stageMetaPackage(packageName, version, outDir) {
   mkdirSync(path.join(packageRoot, "scripts"), { recursive: true });
 
   cpSync(path.join(repoRoot, ".agents", "plugins", "marketplace.json"), path.join(packageRoot, ".agents", "plugins", "marketplace.json"));
-  cpSync(path.join(repoRoot, "plugins", "open-computer-use"), path.join(packageRoot, "plugins", "open-computer-use"), {
+  cpSync(path.join(repoRoot, "plugins", "cairn"), path.join(packageRoot, "plugins", "cairn"), {
     recursive: true,
   });
   cpSync(path.join(repoRoot, "LICENSE"), path.join(packageRoot, "LICENSE"));
@@ -620,9 +620,8 @@ function stageMetaPackage(packageName, version, outDir) {
   copyInstallerScripts(packageRoot);
 
   const launcher = renderLauncher();
-  writeExecutable(path.join(packageRoot, "bin", "open-computer-use"), launcher);
-  writeExecutable(path.join(packageRoot, "bin", "open-computer-use-mcp"), launcher);
-  writeExecutable(path.join(packageRoot, "bin", "open-codex-computer-use-mcp"), launcher);
+  writeExecutable(path.join(packageRoot, "bin", "cairn"), launcher);
+  writeExecutable(path.join(packageRoot, "bin", "cairn-mcp"), launcher);
   writeFileSync(path.join(packageRoot, "scripts", "postinstall.mjs"), renderPostinstall(packageName, version), "utf-8");
   writeFileSync(path.join(packageRoot, "README.md"), renderReadme(packageName, version), "utf-8");
   writeFileSync(path.join(packageRoot, "package.json"), `${JSON.stringify(renderMetaPackageJson(packageName, version), null, 2)}\n`, "utf-8");
@@ -640,7 +639,7 @@ function stagePackage(packageName, version, outDir) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const pluginManifestPath = path.join(repoRoot, "plugins", "open-computer-use", ".codex-plugin", "plugin.json");
+  const pluginManifestPath = path.join(repoRoot, "plugins", "cairn", ".cursor-plugin", "plugin.json");
   const { version } = readJSON(pluginManifestPath);
 
   if (!options.skipBuild) {

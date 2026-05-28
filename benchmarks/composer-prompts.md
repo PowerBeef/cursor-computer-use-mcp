@@ -4,7 +4,7 @@ Run each prompt **twice** (once per MCP variant). Enable **only one** server at 
 
 | Variant | MCP server | Tools |
 |---------|------------|-------|
-| **ocu** | `cursor-computer-use` | 9 tools via `open-computer-use mcp` |
+| **ocu** | `cairn` | 9 tools via `cairn mcp` |
 | **legacy** | `computer-use-mcp` (optional) | Single `computer` tool |
 
 | # | Prompt |

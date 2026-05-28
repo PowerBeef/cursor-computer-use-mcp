@@ -25,11 +25,11 @@ function captureStdout(fn) {
 
 test("printCursorPostInstallChecklist references serverName", () => {
   const output = captureStdout(() => {
-    printCursorPostInstallChecklist("/tmp/mcp.json", {}, "cursor-computer-use");
+    printCursorPostInstallChecklist("/tmp/mcp.json", {}, "cairn");
   });
-  assert.match(output, /cursor-computer-use/);
+  assert.match(output, /cairn/);
   assert.match(output, /Post-install checklist/);
-  assert.match(output, /open-computer-use doctor --cursor/);
+  assert.match(output, /cairn doctor --cursor/);
 });
 
 test("cursor-mcp idempotent install prints checklist", () => {
@@ -39,7 +39,7 @@ test("cursor-mcp idempotent install prints checklist", () => {
     configPath,
     JSON.stringify({
       mcpServers: {
-        "cursor-computer-use": { command: "open-computer-use", args: ["mcp"] },
+        "cairn": { command: "cairn", args: ["mcp"] },
       },
     }),
     "utf8",
@@ -48,10 +48,10 @@ test("cursor-mcp idempotent install prints checklist", () => {
   const scriptPath = fileURLToPath(new URL("./install-config-helper.mjs", import.meta.url));
   const output = execFileSync(
     process.execPath,
-    [scriptPath, "cursor-mcp", configPath, "cursor-computer-use", "open-computer-use"],
+    [scriptPath, "cursor-mcp", configPath, "cairn", "cairn"],
     { encoding: "utf8", cwd: dir },
   );
   assert.match(output, /already installed/);
   assert.match(output, /Post-install checklist/);
-  assert.match(output, /cursor-computer-use/);
+  assert.match(output, /cairn/);
 });

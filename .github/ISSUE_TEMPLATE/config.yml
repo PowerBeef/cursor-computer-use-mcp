@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Cursor install and permissions
-    url: https://github.com/PowerBeef/cursor-computer-use-mcp/blob/master/docs/CURSOR.md
+    url: https://github.com/PowerBeef/cairn-computer-use/blob/master/docs/CURSOR.md
     about: Canonical install, permissions, and Composer workflow.
   - name: macOS 26 capture troubleshooting
-    url: https://github.com/PowerBeef/cursor-computer-use-mcp/blob/master/docs/macOS-26.md
+    url: https://github.com/PowerBeef/cairn-computer-use/blob/master/docs/macOS-26.md
     about: Tahoe-specific permission / capture notes.

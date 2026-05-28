@@ -1,6 +1,6 @@
 # Benchmarks
 
-Headless MCP harness for native `open-computer-use mcp` (OCU). Optional legacy comparison against `npx computer-use-mcp`.
+Headless MCP harness for native `cairn mcp` (OCU). Optional legacy comparison against `npx computer-use-mcp`.
 
 **Documentation:** [docs/BENCHMARK.md](../docs/BENCHMARK.md)
 

@@ -3,7 +3,7 @@
   "hooks": [
     {
       "event": "turnEnded",
-      "command": ["open-computer-use", "turn-ended"]
+      "command": ["cairn", "turn-ended"]
     }
   ]
 }

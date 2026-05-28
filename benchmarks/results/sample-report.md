@@ -1,6 +1,6 @@
 # Benchmark sample baseline
 
-Placeholder p50/p95 targets for `cursor-computer-use` smoke runs. Re-run after runtime changes:
+Placeholder p50/p95 targets for `cairn` smoke runs. Re-run after runtime changes:
 
 ```bash
 BENCHMARK_TRIALS=3 npm run benchmark

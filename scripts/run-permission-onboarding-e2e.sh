@@ -3,27 +3,27 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cli="${OPEN_COMPUTER_USE_E2E_CLI:-${repo_root}/.build/debug/OpenComputerUse}"
-timeout_seconds="${OPEN_COMPUTER_USE_E2E_TIMEOUT_SECONDS:-3}"
-disable_app_agent_proxy="${OPEN_COMPUTER_USE_E2E_DISABLE_APP_AGENT_PROXY:-1}"
+cli="${CAIRN_E2E_CLI:-${repo_root}/.build/debug/Cairn}"
+timeout_seconds="${CAIRN_E2E_TIMEOUT_SECONDS:-3}"
+disable_app_agent_proxy="${CAIRN_E2E_DISABLE_APP_AGENT_PROXY:-1}"
 
 cd "${repo_root}"
 
-if [[ -z "${OPEN_COMPUTER_USE_E2E_CLI:-}" ]]; then
-  swift build --product OpenComputerUse
+if [[ -z "${CAIRN_E2E_CLI:-}" ]]; then
+  swift build --product Cairn
 fi
 
 if [[ ! -x "${cli}" ]]; then
-  if command -v open-computer-use >/dev/null 2>&1; then
-    cli="$(command -v open-computer-use)"
+  if command -v cairn >/dev/null 2>&1; then
+    cli="$(command -v cairn)"
   else
     echo "Missing executable: ${cli}" >&2
-    echo "Run swift build first, or set OPEN_COMPUTER_USE_E2E_CLI=/path/to/open-computer-use." >&2
+    echo "Run swift build first, or set CAIRN_E2E_CLI=/path/to/cairn." >&2
     exit 1
   fi
 fi
 
-tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/open-computer-use-permission-e2e.XXXXXX")"
+tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/cairn-permission-e2e.XXXXXX")"
 cleanup() {
   rm -rf "${tmpdir}"
 }
@@ -33,7 +33,7 @@ echo "Using CLI: ${cli}"
 if [[ "${disable_app_agent_proxy}" == "1" || "${disable_app_agent_proxy}" == "true" || "${disable_app_agent_proxy}" == "yes" ]]; then
   echo "Using direct CLI permission checks (app-agent proxy disabled for this E2E)."
   run_cli() {
-    OPEN_COMPUTER_USE_DISABLE_APP_AGENT_PROXY=1 "${cli}" "$@"
+    CAIRN_DISABLE_APP_AGENT_PROXY=1 "${cli}" "$@"
   }
 else
   echo "Using default CLI app-agent proxy behavior."

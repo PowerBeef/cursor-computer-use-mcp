@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a problem with cursor-computer-use / open-computer-use MCP.
+description: Report a problem with cairn / cairn MCP.
 title: "[bug] "
 labels:
   - bug
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please run `open-computer-use doctor --cursor` and paste the output below. Most issues are caused by missing Accessibility / Screen Recording permissions on **Open Computer Use.app** (not Terminal/Cursor).
+        Please run `cairn doctor --cursor` and paste the output below. Most issues are caused by missing Accessibility / Screen Recording permissions on **Cairn.app** (not Terminal/Cursor).
   - type: input
     id: cursor-version
     attributes:
@@ -23,17 +23,17 @@ body:
     validations:
       required: true
   - type: input
-    id: open-computer-use-version
+    id: cairn-version
     attributes:
-      label: open-computer-use version
-      description: Output of `open-computer-use --version`.
+      label: cairn version
+      description: Output of `cairn --version`.
       placeholder: "e.g. 0.1.51"
     validations:
       required: true
   - type: textarea
     id: doctor
     attributes:
-      label: open-computer-use doctor --cursor output
+      label: cairn doctor --cursor output
       render: text
     validations:
       required: true
