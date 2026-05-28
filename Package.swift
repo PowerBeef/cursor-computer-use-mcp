@@ -3,26 +3,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenComputerUse",
+    name: "Cairn",
     platforms: [
         .macOS(.v26),
     ],
     products: [
         .library(
-            name: "OpenComputerUseKit",
-            targets: ["OpenComputerUseKit"]
+            name: "CairnKit",
+            targets: ["CairnKit"]
         ),
         .executable(
-            name: "OpenComputerUse",
-            targets: ["OpenComputerUse"]
+            name: "Cairn",
+            targets: ["Cairn"]
         ),
         .executable(
-            name: "OpenComputerUseFixture",
-            targets: ["OpenComputerUseFixture"]
+            name: "CairnFixture",
+            targets: ["CairnFixture"]
         ),
         .executable(
-            name: "OpenComputerUseSmokeSuite",
-            targets: ["OpenComputerUseSmokeSuite"]
+            name: "CairnSmokeSuite",
+            targets: ["CairnSmokeSuite"]
         ),
         .executable(
             name: "CursorMotion",
@@ -35,23 +35,23 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "OpenComputerUseKit",
-            path: "packages/OpenComputerUseKit/Sources/OpenComputerUseKit"
+            name: "CairnKit",
+            path: "packages/CairnKit/Sources/CairnKit"
         ),
         .executableTarget(
-            name: "OpenComputerUse",
-            dependencies: ["OpenComputerUseKit"],
-            path: "apps/OpenComputerUse/Sources/OpenComputerUse"
+            name: "Cairn",
+            dependencies: ["CairnKit"],
+            path: "apps/Cairn/Sources/Cairn"
         ),
         .executableTarget(
-            name: "OpenComputerUseFixture",
-            dependencies: ["OpenComputerUseKit"],
-            path: "apps/OpenComputerUseFixture/Sources/OpenComputerUseFixture"
+            name: "CairnFixture",
+            dependencies: ["CairnKit"],
+            path: "apps/CairnFixture/Sources/CairnFixture"
         ),
         .executableTarget(
-            name: "OpenComputerUseSmokeSuite",
-            dependencies: ["OpenComputerUseKit"],
-            path: "apps/OpenComputerUseSmokeSuite/Sources/OpenComputerUseSmokeSuite"
+            name: "CairnSmokeSuite",
+            dependencies: ["CairnKit"],
+            path: "apps/CairnSmokeSuite/Sources/CairnSmokeSuite"
         ),
         .executableTarget(
             name: "CursorMotion",
@@ -67,9 +67,9 @@ let package = Package(
             path: "experiments/StandaloneCursor/Sources/StandaloneCursor"
         ),
         .testTarget(
-            name: "OpenComputerUseKitTests",
-            dependencies: ["OpenComputerUseKit"],
-            path: "packages/OpenComputerUseKit/Tests/OpenComputerUseKitTests"
+            name: "CairnKitTests",
+            dependencies: ["CairnKit"],
+            path: "packages/CairnKit/Tests/CairnKitTests"
         ),
         .testTarget(
             name: "StandaloneCursorSupportTests",
